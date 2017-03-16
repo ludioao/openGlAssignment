@@ -2,12 +2,14 @@
 #include <string>
 #include "Drawer.h"
 
+using namespace std;
+
 //
 // Constructor
 //
 Drawer::Drawer()
 {   
-    std::cout << "Constructor " << std::endl;
+    cout << "Constructor " << endl;
 }
 
 //
@@ -15,7 +17,17 @@ Drawer::Drawer()
 //
 Drawer::~Drawer()
 {
-    std::cout << "destructing " << std::endl;
+    cout << "destructing " << endl;
+}
+
+
+bool 
+Drawer::isValidShape(string type)
+{
+    if (type.compare("cube") == 0 || type.compare("sphere") == 0 || type.compare("cone") == 0 || type.compare("torus") == 0)
+           return true;
+    
+    return false;
 }
 
 //
@@ -25,11 +37,11 @@ Drawer::~Drawer()
 void 
 Drawer::listen(const OpenGLContext * context)
 {
-    std::cout << "Initializing openGL " << std::endl;
+    cout << "Initializing openGL " << endl;
 
-    std::string command = "";
+    string command = "";
 
-    std::string  c1 = "",
+    string  c1 = "",
             c2 = "",
             c3 = "",
             c4 = "";
@@ -43,96 +55,96 @@ Drawer::listen(const OpenGLContext * context)
     // read until exit is needed.
     while ( 1 ) {
         command.clear();
-        std::cin.clear();
+        cin.clear();
 
-        std::cin >> command;
+        cin >> command;
         c1.clear();
         c2.clear();
         c3.clear();
         c4.clear();
         
-        //std::cin >> command;
+        //cin >> command;
 
         if (command.compare("add_shape") == 0)
         {
             // add_shape...
-            std::cin >> c1;
-            std::cin >> c2;
-            addShape(c1);            
+            cin >> c1;
+            cin >> c2;
+            addShape(c1, c2);            
         }
         else if (command.compare("remove_shape") == 0)
         {
             // remove_shape.
-            std::cin >> c1;
+            cin >> c1;
             removeShape(c1);
         }
         else if (command.compare("add_light") == 0)
         {
             // add_light
-            std::cin >> c1; // lightname
-            std::cin >> f1 >> f2 >> f3; // float 
+            cin >> c1; // lightname
+            cin >> f1 >> f2 >> f3; // float 
             addLight(c1, f1, f2, f3);
         }
         else if (command.compare("remove_light") == 0)
         {
             // remove_light
-            std::cin >> c1;
+            cin >> c1;
             removeLight(c1);
         }
         else if (command.compare("reflection_on") == 0)
         {
-            std::cin >> c1;
-            std::cin >> f1;
+            cin >> c1;
+            cin >> f1;
             enableReflection(c1, f1);
         }
         else if (command.compare("reflection_off") == 0)
         {
-            std::cin >> c1;
-            std::cin >> f1;
+            cin >> c1;
+            cin >> f1;
             disableReflection(c1, f1);
         }
         else if (command.compare("shading") == 0)
         {
-            std::cin >> c1;
+            cin >> c1;
             setShading(c1);
         }
         else if (command.compare("projection") == 0)
         {
-            std::cin >> c1;
+            cin >> c1;
             setProjection(c1);
         }
         else if (command.compare("translate") == 0)
         {
-            std::cin >> c1;
-            std::cin >> f1 >> f2 >> f3;
+            cin >> c1;
+            cin >> f1 >> f2 >> f3;
             setTranslate(c1, f1, f2, f3);            
         }
         else if (command.compare("scale") == 0)
         {
-            std::cin >> c1;
-            std::cin >> f1 >> f2 >> f3;
+            cin >> c1;
+            cin >> f1 >> f2 >> f3;
             setScale(c1, f1, f2, f3);
         }
         else if (command.compare("rotate") == 0)
         {
-            std::cin >> c1;
-            std::cin >> f1 >> f2 >> f3 >> f4;
+            cin >> c1;
+            cin >> f1 >> f2 >> f3 >> f4;
             setRotate(c1, f1, f2, f3, f4);
         }
         else if (command.compare("lookat") == 0)
         {
-            std::cin >> f1 >> f2 >> f3;
+            cin >> f1 >> f2 >> f3;
             setLookAt(f1, f2, f3); 
         }
         else if (command.compare("cam") == 0)
         {
-            std::cin >> f1 >> f2 >> f3;
+            cin >> f1 >> f2 >> f3;
             setCam(f1, f2, f3);
         }
         else if (command.compare("color") == 0)
         {
-            std::cin >> c1;
-            std::cin >> f1 >> f2 >> f3;
+            cin >> c1;
+            cin >> f1 >> f2 >> f3;
             setColor(c1, f1, f2, f3);
         }
         else if (command.compare("axis") == 0)
@@ -141,17 +153,17 @@ Drawer::listen(const OpenGLContext * context)
         }
         else if (command.compare("save") == 0)
         {
-            std::cin >> c1;
-            std::cout << "Saving into file... " << c1;
+            cin >> c1;
+            cout << "Saving into file... " << c1;
             save(c1);
         }
         else if (command.compare("quit") == 0)
         {
             exit();
-            std::cout << "Program finished." << std::endl;
+            cout << "Program finished." << endl;
         }
         else {
-            std::cout << "Command not recognized" << std::endl;
+            cout << "Command not recognized" << endl;
         }
 
     }
@@ -168,68 +180,101 @@ Drawer::listen(const OpenGLContext * context)
 // Adicionar um shape.
 //
 void
-Drawer::addShape(std::string shapeName)
-{   
-    std::cout << "Ok!! Creating shape: " << shapeName << std::endl;
+Drawer::addShape(string type, string shapeName)
+{ 
+    if (this->isValidShape(type)) {
+        cout << "Ok!! Creating " << type << ": " << shapeName << endl;
+    }
+    else {
+        cout << "Shape not recognized." << endl;    
+    }    
     //console_log("Ok!! Creating shape > " + shapeName);
 };
 
 void
-Drawer::removeShape(std::string shapeName)
+Drawer::removeShape(string shapeName)
 {
-    //console_log("Removing shape > " + shapeName);
+    // Retorna o indice onde o Shape está.
+    // int index = this->findShape(shapeName);
+    // if (index != -1)
+    // {
+    //     // Remove shape.
+    // }    
+    // else {
+    //     cout << "Shape not found in array" << endl;
+    // }
 };
 
 void 
-Drawer::addLight(std::string shapeName, float, float, float)
+Drawer::addLight(string shapeName, float f1, float f2, float f3)
 {
-
+    // find by shapename
+    int shapeId = this->findShape(shapeName);
+    
+    // Find..
+    if (shapeId != -1)
+    {
+        // Update light
+        this->updateLight(shapeId, true, f1, f2, f3);
+    }
 };
 
 void 
-Drawer::removeLight(std::string shapeName)
+Drawer::removeLight(string shapeName)
 {
-
+    int shapeId = this->findShape(shapeName);
+    
+    if (shapeId != -1)
+    {
+        this->destroyLight(shapeId);
+    }    
 };
 
 void 
-Drawer::enableReflection(std::string, float)
+Drawer::enableReflection(string Type, float CoefficientK)
 {
-
+    if (Type.compare("specular") == 0 || Type.compare("diffuse") == 0 || Type.compare("ambient") == 0)
+    {
+        cout << "Enabling reflection on " << Type << " with coefficient K in " << CoefficientK << endl;
+    }
+    else 
+    {
+        cout << "Reflection not recognized" << endl;
+    }
 };
 
 void 
-Drawer::disableReflection(std::string, float)
+Drawer::disableReflection(string, float)
 {
 
 };
         
 void 
-Drawer::setShading(std::string)
+Drawer::setShading(string)
 {
 
 };
         
 void 
-Drawer::setProjection(std::string type)
+Drawer::setProjection(string type)
 {
 
 };
         
 void 
-Drawer::setTranslate(std::string, float, float, float)
+Drawer::setTranslate(string, float, float, float)
 {
 
 };
         
 void 
-Drawer::setScale(std::string shapeName, float, float, float)
+Drawer::setScale(string shapeName, float, float, float)
 {
 
 };
         
 void 
-Drawer::setRotate(std::string shapeName, float, float, float, float)
+Drawer::setRotate(string shapeName, float, float, float, float)
 {
 
 };
@@ -247,7 +292,7 @@ Drawer::setCam(float, float, float)
 };
         
 void 
-Drawer::setColor(std::string, float, float, float)
+Drawer::setColor(string, float, float, float)
 {
 
 };
@@ -259,7 +304,7 @@ Drawer::axis()
 };
         
 void 
-Drawer::save(std::string filename)
+Drawer::save(string filename)
 {
 
 };

@@ -14,10 +14,12 @@ class Drawer
         ~Drawer();
         
         void listen(const OpenGLContext* context);
-        
+
+        // Helpers.
+        bool isValidShape(std::string type);
 
         // Commands
-        void addShape(std::string shapeName);
+        void addShape(std::string shapeType, std::string shapeName);
         void removeShape(std::string shapeName);
         void addLight(std::string shapeName, float, float, float);
         void removeLight(std::string shapeName);
