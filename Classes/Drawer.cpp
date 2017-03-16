@@ -1,12 +1,43 @@
+#ifndef __DRAWER_CPP
+#define __DRAWER_CPP
 #include <iostream>
 #include <string>
+#include "Drawer.h"
 
 using namespace std;
 
+inline string console_log(string val)
+{
+    cout << val << endl;
+}
+
+
+//
+// Constructor
+//
+DrawerListen::DrawerListen()
+{
+
+}
+
+//
+// Destructor
+//
+DrawerListen::~DrawerListen()
+{
+    
+}
+
+//
+// Funcao pra ficar escutando os comandos 
+// solicitados pelo usuario no terminal
+//
 void 
 DrawerListen::listen()
 {
-    string command;
+    cout << "Initializing openGL " << endl;
+
+    string command = "";
 
     string  c1 = "",
             c2 = "",
@@ -20,8 +51,13 @@ DrawerListen::listen()
             f4 = 0.0;            
 
     // read until exit is needed.
-    do {
-        c1 = c2 = c3 = c4 = "";
+    while ( cin >> command ) {
+        c1.clear();
+        c2.clear();
+        c3.clear();
+        c4.clear();
+        
+        //cin >> command;
 
         if (command.compare("add_shape") == 0)
         {
@@ -112,7 +148,7 @@ DrawerListen::listen()
         {
             cin >> c1;
             cout << "Saving into file... " << c1;
-            save();
+            save(c1);
         }
         else if (command.compare("quit") == 0)
         {
@@ -123,6 +159,120 @@ DrawerListen::listen()
             cout << "Command not recognized" << endl;
         }
 
-    } while ( cin >> command );
+    }
     
 }
+
+
+//
+// Metodos de Comando 
+//
+
+
+//
+// Adicionar um shape.
+//
+void
+DrawerListen::addShape(const string shapeName)
+{   
+    console_log("Ok!! Creating shape > " + shapeName);
+};
+
+void
+DrawerListen::removeShape(const string shapeName)
+{
+    console_log("Removing shape > " + shapeName);
+};
+
+void 
+DrawerListen::addLight(const string shapeName, float, float, float)
+{
+
+};
+
+void 
+DrawerListen::removeLight(const string shapeName)
+{
+
+};
+
+void 
+DrawerListen::enableReflection(const string, float)
+{
+
+};
+
+void 
+DrawerListen::disableReflection(const string, float)
+{
+
+};
+        
+void 
+DrawerListen::setShading(const string)
+{
+
+};
+        
+void 
+DrawerListen::setProjection(const string type)
+{
+
+};
+        
+void 
+DrawerListen::setTranslate(const string, float, float, float)
+{
+
+};
+        
+void 
+DrawerListen::setScale(const string shapeName, float, float, float)
+{
+
+};
+        
+void 
+DrawerListen::setRotate(const string shapeName, float, float, float, float)
+{
+
+};
+        
+void
+DrawerListen::setLookAt(float, float, float)
+{
+
+};
+        
+void 
+DrawerListen::setCam(float, float, float)
+{
+
+};
+        
+void 
+DrawerListen::setColor(const string, float, float, float)
+{
+
+};
+        
+void 
+DrawerListen::axis()
+{
+
+};
+        
+void 
+DrawerListen::save(const string filename)
+{
+
+};
+        
+void 
+DrawerListen::exit()
+{
+
+};
+
+
+#endif

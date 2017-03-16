@@ -11,10 +11,13 @@ class DrawerListen
     private:
         bool showAxis;
 
+        //vector<Shape*> renderizedShapes;
+
 
 
     public:
         DrawerListen();
+        ~DrawerListen();
         
         // Start
         // void start();
@@ -36,7 +39,7 @@ class DrawerListen
         void setProjection(const string type);
         void setTranslate(const string, float, float, float);
         void setScale(const string shapeName, float, float, float);
-        void setRotate(const string shapeName, float, float, float);
+        void setRotate(const string shapeName, float, float, float, float);
         void setLookAt(float, float, float);
         void setCam(float, float, float);
         void setColor(const string, float, float, float);
@@ -45,11 +48,5 @@ class DrawerListen
         void exit();
 
 };
-
-
-DrawerListen::DrawerListen()
-{
-    showAxis = false;
-}
 
 #endif

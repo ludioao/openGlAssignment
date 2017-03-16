@@ -3,11 +3,11 @@
 
 class Wrapper 
 {
-    private:
+    /*private:
         int shapeNumber;
         // returns the last shaper number
         int getShapeNumber() const { return shapeNumber; };
-
+*/
     public:
         //void renderScene(LPVOID lpParam);
         Wrapper();

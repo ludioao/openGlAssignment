@@ -1,6 +1,11 @@
+#include <iostream>
+#include "Wrapper.h"
+
+using namespace std;
+
 Wrapper::Wrapper()
 {
-    shapeNumber = 0;
+    //shapeNumber = 0;
 }
 
 /*

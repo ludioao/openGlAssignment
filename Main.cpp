@@ -17,7 +17,7 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 
-#include "Classes/Drawer.h"
+#include "./Classes/Drawer.h"
 
 using namespace std;
 
