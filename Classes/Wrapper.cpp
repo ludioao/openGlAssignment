@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Wrapper.h"
 
-using namespace std;
+//using namespace std;
 
 Wrapper::Wrapper()
 {

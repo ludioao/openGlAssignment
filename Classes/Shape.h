@@ -1,6 +1,10 @@
-#ifndef __SHAPE_H
-#define __SHAPE_H
+#pragma once // compilar apenas uma vez
 
+class Shape {
+
+    public: 
+        virtual void setAttributes(...);
+};
 
 
 #endif

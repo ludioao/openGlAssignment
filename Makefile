@@ -1,5 +1,5 @@
 CPPC=g++
-CFLAGS=-lGLEW -lGL -lGLU -lglut
+CFLAGS=-lGLEW -lGL -lGLU -lglut -g
 STD=-std=c++11
 VERBOSE=-v
 

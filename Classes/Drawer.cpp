@@ -1,31 +1,21 @@
-#ifndef __DRAWER_CPP
-#define __DRAWER_CPP
 #include <iostream>
 #include <string>
 #include "Drawer.h"
 
-using namespace std;
-
-inline string console_log(string val)
-{
-    cout << val << endl;
-}
-
-
 //
 // Constructor
 //
-DrawerListen::DrawerListen()
-{
-
+Drawer::Drawer()
+{   
+    std::cout << "Constructor " << std::endl;
 }
 
 //
 // Destructor
 //
-DrawerListen::~DrawerListen()
+Drawer::~Drawer()
 {
-    
+    std::cout << "destructing " << std::endl;
 }
 
 //
@@ -33,13 +23,13 @@ DrawerListen::~DrawerListen()
 // solicitados pelo usuario no terminal
 //
 void 
-DrawerListen::listen()
+Drawer::listen()
 {
-    cout << "Initializing openGL " << endl;
+    std::cout << "Initializing openGL " << std::endl;
 
-    string command = "";
+    std::string command = "";
 
-    string  c1 = "",
+    std::string  c1 = "",
             c2 = "",
             c3 = "",
             c4 = "";
@@ -51,93 +41,97 @@ DrawerListen::listen()
             f4 = 0.0;            
 
     // read until exit is needed.
-    while ( cin >> command ) {
+    while ( 1 ) {
+        command.clear();
+        std::cin.clear();
+
+        std::cin >> command;
         c1.clear();
         c2.clear();
         c3.clear();
         c4.clear();
         
-        //cin >> command;
+        //std::cin >> command;
 
         if (command.compare("add_shape") == 0)
         {
             // add_shape...
-            cin >> c1;
+            std::cin >> c1;
             addShape(c1);            
         }
         else if (command.compare("remove_shape") == 0)
         {
             // remove_shape.
-            cin >> c1;
+            std::cin >> c1;
             removeShape(c1);
         }
         else if (command.compare("add_light") == 0)
         {
             // add_light
-            cin >> c1; // lightname
-            cin >> f1 >> f2 >> f3; // float 
+            std::cin >> c1; // lightname
+            std::cin >> f1 >> f2 >> f3; // float 
             addLight(c1, f1, f2, f3);
         }
         else if (command.compare("remove_light") == 0)
         {
             // remove_light
-            cin >> c1;
+            std::cin >> c1;
             removeLight(c1);
         }
         else if (command.compare("reflection_on") == 0)
         {
-            cin >> c1;
-            cin >> f1;
+            std::cin >> c1;
+            std::cin >> f1;
             enableReflection(c1, f1);
         }
         else if (command.compare("reflection_off") == 0)
         {
-            cin >> c1;
-            cin >> f1;
+            std::cin >> c1;
+            std::cin >> f1;
             disableReflection(c1, f1);
         }
         else if (command.compare("shading") == 0)
         {
-            cin >> c1;
+            std::cin >> c1;
             setShading(c1);
         }
         else if (command.compare("projection") == 0)
         {
-            cin >> c1;
+            std::cin >> c1;
             setProjection(c1);
         }
         else if (command.compare("translate") == 0)
         {
-            cin >> c1;
-            cin >> f1 >> f2 >> f3;
+            std::cin >> c1;
+            std::cin >> f1 >> f2 >> f3;
             setTranslate(c1, f1, f2, f3);            
         }
         else if (command.compare("scale") == 0)
         {
-            cin >> c1;
-            cin >> f1 >> f2 >> f3;
+            std::cin >> c1;
+            std::cin >> f1 >> f2 >> f3;
             setScale(c1, f1, f2, f3);
         }
         else if (command.compare("rotate") == 0)
         {
-            cin >> c1;
-            cin >> f1 >> f2 >> f3 >> f4;
+            std::cin >> c1;
+            std::cin >> f1 >> f2 >> f3 >> f4;
             setRotate(c1, f1, f2, f3, f4);
         }
         else if (command.compare("lookat") == 0)
         {
-            cin >> f1 >> f2 >> f3;
+            std::cin >> f1 >> f2 >> f3;
             setLookAt(f1, f2, f3); 
         }
         else if (command.compare("cam") == 0)
         {
-            cin >> f1 >> f2 >> f3;
+            std::cin >> f1 >> f2 >> f3;
             setCam(f1, f2, f3);
         }
         else if (command.compare("color") == 0)
         {
-            cin >> c1;
-            cin >> f1 >> f2 >> f3;
+            std::cin >> c1;
+            std::cin >> f1 >> f2 >> f3;
             setColor(c1, f1, f2, f3);
         }
         else if (command.compare("axis") == 0)
@@ -146,17 +140,17 @@ DrawerListen::listen()
         }
         else if (command.compare("save") == 0)
         {
-            cin >> c1;
-            cout << "Saving into file... " << c1;
+            std::cin >> c1;
+            std::cout << "Saving into file... " << c1;
             save(c1);
         }
         else if (command.compare("quit") == 0)
         {
             exit();
-            cout << "Program finished." << endl;
+            std::cout << "Program finished." << std::endl;
         }
         else {
-            cout << "Command not recognized" << endl;
+            std::cout << "Command not recognized" << std::endl;
         }
 
     }
@@ -173,106 +167,104 @@ DrawerListen::listen()
 // Adicionar um shape.
 //
 void
-DrawerListen::addShape(const string shapeName)
+Drawer::addShape(std::string shapeName)
 {   
-    console_log("Ok!! Creating shape > " + shapeName);
+    std::cout << "Ok!! Creating shape: " << shapeName << std::endl;
+    //console_log("Ok!! Creating shape > " + shapeName);
 };
 
 void
-DrawerListen::removeShape(const string shapeName)
+Drawer::removeShape(std::string shapeName)
 {
-    console_log("Removing shape > " + shapeName);
+    //console_log("Removing shape > " + shapeName);
 };
 
 void 
-DrawerListen::addLight(const string shapeName, float, float, float)
-{
-
-};
-
-void 
-DrawerListen::removeLight(const string shapeName)
+Drawer::addLight(std::string shapeName, float, float, float)
 {
 
 };
 
 void 
-DrawerListen::enableReflection(const string, float)
+Drawer::removeLight(std::string shapeName)
 {
 
 };
 
 void 
-DrawerListen::disableReflection(const string, float)
+Drawer::enableReflection(std::string, float)
 {
 
 };
-        
+
 void 
-DrawerListen::setShading(const string)
+Drawer::disableReflection(std::string, float)
 {
 
 };
         
 void 
-DrawerListen::setProjection(const string type)
+Drawer::setShading(std::string)
 {
 
 };
         
 void 
-DrawerListen::setTranslate(const string, float, float, float)
+Drawer::setProjection(std::string type)
 {
 
 };
         
 void 
-DrawerListen::setScale(const string shapeName, float, float, float)
+Drawer::setTranslate(std::string, float, float, float)
 {
 
 };
         
 void 
-DrawerListen::setRotate(const string shapeName, float, float, float, float)
+Drawer::setScale(std::string shapeName, float, float, float)
+{
+
+};
+        
+void 
+Drawer::setRotate(std::string shapeName, float, float, float, float)
 {
 
 };
         
 void
-DrawerListen::setLookAt(float, float, float)
+Drawer::setLookAt(float, float, float)
 {
 
 };
         
 void 
-DrawerListen::setCam(float, float, float)
+Drawer::setCam(float, float, float)
 {
 
 };
         
 void 
-DrawerListen::setColor(const string, float, float, float)
+Drawer::setColor(std::string, float, float, float)
 {
 
 };
         
 void 
-DrawerListen::axis()
+Drawer::axis()
 {
 
 };
         
 void 
-DrawerListen::save(const string filename)
+Drawer::save(std::string filename)
 {
 
 };
         
 void 
-DrawerListen::exit()
+Drawer::exit()
 {
 
 };
-
-
-#endif

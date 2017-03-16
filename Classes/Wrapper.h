@@ -1,5 +1,4 @@
-#ifndef __WRAPPER_H__
-#define __WRAPPER_H__
+#pragma once // compilar apenas uma vez
 
 class Wrapper 
 {
@@ -13,5 +12,3 @@ class Wrapper
         Wrapper();
 
 };
-
-#endif
