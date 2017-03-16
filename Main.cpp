@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
 	OpenGLContext context { argc, argv };
     context.printVersion();
     context.runLoop();    
+    context.getCommands();
     //void printVersion() const; // Show OpenGL Version
     //void runLoop() const;
     //    auto drawer = new Drawer();

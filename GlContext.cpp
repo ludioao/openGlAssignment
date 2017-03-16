@@ -10,7 +10,7 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>  // ou glut.h - GLUT, include glu.h and gl.h
 #include <GL/gl.h>
-
+#include "./Classes/Camera.h"
 #include "./Classes/Drawer.h"
 
 #define SHADER_PATH "./Shaders/"
@@ -132,7 +132,14 @@ void OpenGLContext::printVersion() const {
 
 void OpenGLContext::runLoop() const {
 	this->render();
+    this->getCommands();    
 	glutMainLoop();
+}
+
+void OpenGLContext::getCommands() const {
+    // 
+    Drawer* drawer = new Drawer();
+    drawer->listen(this);
 }
 
 void OpenGLContext::finalize() const {

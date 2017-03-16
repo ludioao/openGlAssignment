@@ -23,7 +23,7 @@ Drawer::~Drawer()
 // solicitados pelo usuario no terminal
 //
 void 
-Drawer::listen()
+Drawer::listen(const OpenGLContext * context)
 {
     std::cout << "Initializing openGL " << std::endl;
 
@@ -57,6 +57,7 @@ Drawer::listen()
         {
             // add_shape...
             std::cin >> c1;
+            std::cin >> c2;
             addShape(c1);            
         }
         else if (command.compare("remove_shape") == 0)

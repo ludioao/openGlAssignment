@@ -1,5 +1,5 @@
 #pragma once // compilar apenas uma vez
-
+#include "../GlContext.h"
 #include <iostream>
 #include <string>
 
@@ -13,7 +13,7 @@ class Drawer
         Drawer();
         ~Drawer();
         
-        void listen();
+        void listen(const OpenGLContext* context);
         
 
         // Commands

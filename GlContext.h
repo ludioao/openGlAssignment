@@ -10,6 +10,7 @@ public:
 
     void printVersion() const; // Show OpenGL Version
     void runLoop() const;
+    void getCommands() const;
 
 private:
     unsigned int VAOId;
@@ -22,6 +23,7 @@ private:
     void initialize();   // Init our render
     void render() const;       // Render Loop
     void finalize() const;     // Finalize our render
+    
 
     unsigned int loadAndCompileShader(const std::string& filename, const int glType) const;
     unsigned int linkShaderProgram(unsigned int vertexShaderId, unsigned int fragmentShaderId) const;
