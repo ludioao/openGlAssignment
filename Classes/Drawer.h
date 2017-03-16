@@ -1,11 +1,15 @@
 #ifndef __DRAWER_H__
 #define __DRAWER_H__
 
+#include <iostream>
+
+using namespace std;
+
 class DrawerListen 
 {
 
     private:
-        boolean showAxis;
+        bool showAxis;
 
 
 
@@ -45,7 +49,7 @@ class DrawerListen
 
 DrawerListen::DrawerListen()
 {
-    showAxis = 0;
+    showAxis = false;
 }
 
 #endif
