@@ -13,7 +13,7 @@ class Drawer
         Drawer();
         ~Drawer();
         
-        void listen(const OpenGLContext* context);
+        void listen();
 
         // Helpers.
         bool isValidShape(std::string type);

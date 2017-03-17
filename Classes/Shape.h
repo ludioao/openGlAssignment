@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 
+//#include "../GlContext.h"
+
 using namespace std;
 
 class Shape {
@@ -15,4 +17,15 @@ class Shape {
     public:
         Shape(){};
         Shape(int shapeId, string type, string shapeName);
+        ~Shape();
+        
+        // Main action
+        void drawShape();
+
+        // Shapes
+        void drawCone();
+        void drawSphere();
+        void drawCube();
+        void drawTorus();
+
 };
