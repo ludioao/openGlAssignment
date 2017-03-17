@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <algorithm>
 
 #define GL_GLEXT_PROTOTYPES 1
 #define GL3_PROTOTYPES 1
@@ -12,7 +13,7 @@
 #include <GL/gl.h>
 
 
-//using namespace std;
+using namespace std;
 
 namespace {
 OpenGLContext* currentInstance = nullptr;
@@ -446,16 +447,15 @@ Drawer::addShape(string type, string shapeName)
 
     if (this->isValidShape(type)) {
 
+        // 
         cout << "Ok!! Creating " << type << ": " << shapeName << endl;
 
         Shape *customShape;
+        int objectSize = currentInstance->objects.size();
 
-        if (type.compare("cone") == 0)
-        {
-            // first element... 
-             customShape = new Shape(0, type, shapeName);
-             currentInstance->objects.push_back(customShape);
-        }
+        customShape = new Shape(objectSize, type, shapeName);
+        currentInstance->objects.push_back(customShape);
+
     }
     else {
         cout << "Shape not recognized." << endl;    
@@ -464,19 +464,27 @@ Drawer::addShape(string type, string shapeName)
 };
 
 
+int
+Drawer::findShape(string shapeName)
+{
+    for (int i = 0; i < currentInstance->objects.size(); i++)
+    {
+        if (currentInstance->objects[i]->getName().compare(shapeName) == 0)
+            return currentInstance->objects[i]->getShapeId();
+    }
+    return -1;
+}
+
+
 
 void
 Drawer::removeShape(string shapeName)
 {
-    // Retorna o indice onde o Shape está.
-    // int index = this->findShape(shapeName);
-    // if (index != -1)
-    // {
-    //     // Remove shape.
-    // }    
-    // else {
-    //     cout << "Shape not found in array" << endl;
-    // }
+    for (int i = 0; i < currentInstance->objects.size(); i++)
+    {
+        if (currentInstance->objects[i]->getName().compare(shapeName) == 0)
+            currentInstance->objects.erase(currentInstance->objects.begin() + i);            
+    }
 };
 
 void 
@@ -671,9 +679,7 @@ Shape::drawCone()
     );
     // Draw the triangle !
     glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-    glDisableVertexAttribArray(0);
-
-
+    glDisableVertexAttribArray(this->shapeId);
 }
     
 // .
@@ -682,6 +688,112 @@ Shape::drawCone()
 void 
 Shape::drawSphere()
 {
+    /*
+    // Desenhar a Sphera.
+    double PI = 3.14159;
+    
+    // Vertex positions
+    std::vector<glm::vec3> v; // positions
+    std::vector<glm::vec2> t; // texture map 
+    std::vector<glm::vec3> n; // normals 
+
+    float   x1, x2,
+            y1, y2,
+            z1, z2;
+
+    float   inc1, inc2,
+            inc3, inc4,
+            radius1, radius2;            
+
+    int Resolution = 100;
+    
+    for(int w = 0; w < Resolution; w++) {
+            for(int h = (-Resolution/2); h < (Resolution/2); h++){
+
+                
+                inc1 = (w/(float)Resolution)*2*PI;
+                inc2 = ((w+1)/(float)Resolution)*2*PI;
+                
+                inc3 = (h/(float)Resolution)*PI;
+                inc4 = ((h+1)/(float)Resolution)*PI;
+
+                
+                X1 = sin(inc1);
+                Y1 = cos(inc1);
+                X2 = sin(inc2);
+                Y2 = cos(inc2);
+
+                // store the upper and lower radius, remember everything is going to be drawn as triangles
+                Radius1 = Radius*cos(inc3);
+                Radius2 = Radius*cos(inc4);
+
+                Z1 = Radius*sin(inc3); 
+                Z2 = Radius*sin(inc4);
+
+                // insert the triangle coordinates
+                v.push_back(glm::vec3(Radius1*X1,Z1,Radius1*Y1));
+                v.push_back(glm::vec3(Radius1*X2,Z1,Radius1*Y2));
+                v.push_back(glm::vec3(Radius2*X2,Z2,Radius2*Y2));
+
+
+
+                v.push_back(glm::vec3(Radius1*X1,Z1,Radius1*Y1));
+                v.push_back(glm::vec3(Radius2*X2,Z2,Radius2*Y2));
+                v.push_back(glm::vec3(Radius2*X1,Z2,Radius2*Y1));
+
+
+                // insert the normal data
+                n.push_back(glm::vec3(X1,Z1,Y1)/ glm::length(glm::vec3(X1,Z1,Y1)));
+                n.push_back(glm::vec3(X2,Z1,Y2)/ glm::length(glm::vec3(X2,Z1,Y2)));
+                n.push_back(glm::vec3(X2,Z2,Y2)/ glm::length(glm::vec3(X2,Z2,Y2)));
+                n.push_back(glm::vec3(X1,Z1,Y1)/ glm::length(glm::vec3(X1,Z1,Y1)));
+                n.push_back(glm::vec3(X2,Z2,Y2)/ glm::length(glm::vec3(X2,Z2,Y2)));
+                n.push_back(glm::vec3(X1,Z2,Y1)/ glm::length(glm::vec3(X1,Z2,Y1)));
+            }    
+    }
+
+
+    // finally, create the buffers and bind the data to them
+    std::vector<unsigned short> indices;
+    std::vector<glm::vec3> indexed_vertices;
+    std::vector<glm::vec2> indexed_uvs;
+    std::vector<glm::vec3> indexed_normals;
+    indexVBO(v, t, n, indices, indexed_vertices, indexed_uvs, indexed_normals);
+
+    
+    
+    glGenBuffers(1, &vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
+
+    
+    glGenBuffers(1, &uvbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+    glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);
+
+    
+    glGenBuffers(1, &normalbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+    glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
+
+    // Generate a buffer for the indices as well 
+    glGenBuffers(1, &elementbuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
+
+    
+    // store the number of indices for later use
+    size = indices.size();
+    
+        // clean up after us
+    indexed_normals.clear();
+    indexed_uvs.clear();
+    indexed_vertices.clear();
+    indices.clear();
+    n.clear();
+    v.clear();
+    t.clear();
+    */
 
 }
         
@@ -689,9 +801,54 @@ Shape::drawSphere()
 // .
 // . Draw a cube
 // .            
+
+// Aprendi aqui: http://www.opengl-tutorial.org/beginners-tutorials/tutorial-4-a-colored-cube/
 void 
 Shape::drawCube()
 {
+        /*
+    GLfloat vertices[8] = {
+            {-1, -1, -1},
+            {1,  -1, -1},
+            {1,  1,  -1},
+            {-1, 1,  -1},
+            {-1, -1, 1},
+            {1,  -1, 1},
+            {1,  1,  1},
+            {-1, 1,  1}
+    };
+
+    GLfloat colors[8] = {
+            {0, 0, 0},
+            {1, 0, 0},
+            {1, 1, 0},
+            {0, 1, 0},
+            {0, 0, 1},
+            {1, 0, 1},
+            {1, 1, 1},
+            {0, 1, 1}
+    };
+
+    // Draw the triangle !
+    glDrawArrays(GL_TRIANGLES, 0, 12*3); // 12*3 indices starting at 0 -> 12 triangles -> 6 squares
+
+    //GLuint colorbuffer;
+    //glGenBuffers(this->shapeId, &colorbuffer);
+    //glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
+
+    // 2nd attribute buffer : colors
+    glEnableVertexAttribArray(this->shapeId);
+    //glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+    glVertexAttribPointer(
+        this->shapeId,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+        3,                                // size
+        GL_FLOAT,                         // type
+        GL_FALSE,                         // normalized?
+        0,                                // stride
+        (void*)0                          // array buffer offset
+    );
+    glDisableVertexAttribArray(this->shapeId);*/
 
 }
 

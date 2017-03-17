@@ -19,6 +19,10 @@ class Shape {
         Shape(int shapeId, string type, string shapeName);
         ~Shape();
         
+        string getName(){ return shapeName; };
+        string getType(){ return type; };
+        int getShapeId() { return shapeId; };
+
         // Main action
         void drawShape();
 

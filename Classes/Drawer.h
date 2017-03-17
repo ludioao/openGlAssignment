@@ -15,6 +15,8 @@ class Drawer
         
         void listen();
 
+        int findShape(std::string);
+
         // Helpers.
         bool isValidShape(std::string type);
 

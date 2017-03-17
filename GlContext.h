@@ -20,6 +20,8 @@ class OpenGLContext
         void runLoop() const;
         void getCommands() const;
 
+
+        int findShape(std::string shapeName);
         // Getters
         unsigned int getProgramId() { return programId; }
         unsigned int getVBOId() { return VBOId; }
