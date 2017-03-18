@@ -13,18 +13,48 @@
 #include <GL/gl.h>
 
 
-using namespace std;
-
 namespace {
-OpenGLContext* currentInstance = nullptr;
+    OpenGLContext* currentInstance = nullptr;
 }
-
 
 #include "./Classes/Camera.h"
 #include "./Classes/Drawer.h"
 #include "./Classes/Shape.h"
+#include "./Classes/LeitorObj.h"
+
+using namespace std;
 
 #define SHADER_PATH "./Shaders/"
+
+
+
+inline bool _check_gl_error(const char *file, int line) {
+        GLenum err (glGetError());
+
+        bool result = false;
+
+        while(err!=GL_NO_ERROR) {
+                std::string error;
+
+                switch(err) {
+                        case GL_INVALID_OPERATION:      error="INVALID_OPERATION";      break;
+                        case GL_INVALID_ENUM:           error="INVALID_ENUM";           break;
+                        case GL_INVALID_VALUE:          error="INVALID_VALUE";          break;
+                        case GL_OUT_OF_MEMORY:          error="OUT_OF_MEMORY";          break;
+                        case GL_INVALID_FRAMEBUFFER_OPERATION:  error="INVALID_FRAMEBUFFER_OPERATION";  break;
+                }
+
+                std::cerr << "GL_" << error.c_str() <<" - "<<file<<":"<<line<<std::endl;
+                err=glGetError();
+                result = true;
+        }
+        return result;
+}
+
+#define check_gl_error() _check_gl_error(__FILE__,__LINE__)
+
+#define return_check_gl_error() if (_check_gl_error(__FILE__,__LINE__)) return false;
+
 
 OpenGLContext::OpenGLContext(int argc, char *argv[]) {
 	glutInit(&argc, argv);     // Initialize GLUT
@@ -96,6 +126,7 @@ void OpenGLContext::render() const {
 	glBindBuffer(GL_ARRAY_BUFFER, this->VBOId);
 
     drawObjects();
+
 	// Draw our first triangle
 	// glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -109,10 +140,13 @@ void OpenGLContext::render() const {
 
 void OpenGLContext::drawObjects() const {
     
-    for (int i = 0; i < objects.size(); i++)
+    cout << "We have " << objects.size() << "objects" << endl;
+    for (auto _drawable : objects)
     {
-        objects[i]->drawShape();
+        _drawable->drawShape();
     }
+
+    check_gl_error();
 
 }
 
@@ -213,7 +247,7 @@ unsigned int OpenGLContext::linkShaderProgram(unsigned int vertexShaderId,
 	glAttachShader(shaderProgramId, fragmentShaderId);
 
 	// Setup Vertex Attributes (only for GL < 3.3 and GLSL < 3.3)
-	// glBindAttribLocation (this->getId(), 0, "vertexPosition_modelspace");
+	glBindAttribLocation (1, 0, "a_coord");
 
 	// Link the program!
 	glLinkProgram(shaderProgramId);
@@ -301,9 +335,11 @@ Drawer::listen()
             c3 = "",
             c4 = "";
 
-    auto algumaCoisa = currentInstance->getVAOId();
+    auto cVAOId = currentInstance->getVAOId();
 
-    cout << "alguma coisa dentro do drawer eh " << algumaCoisa;
+    cout << "Current VAOId " << cVAOId << endl;
+
+    
 
     float   
             f1 = 0.0,
@@ -313,6 +349,7 @@ Drawer::listen()
 
     // read until exit is needed.
     while ( 1 ) {
+        cout << "Digite seu comando " << endl;
         currentInstance->render();
 
         command.clear();
@@ -550,9 +587,15 @@ Drawer::setTranslate(string, float, float, float)
 };
         
 void 
-Drawer::setScale(string shapeName, float, float, float)
+Drawer::setScale(string shapeName, float x, float y, float z)
 {
-
+    for (auto _drawable : currentInstance->objects)
+    {
+        if (_drawable->getName().compare(shapeName) == 0)
+        {
+            _drawable->setScalable(x, y, z);
+        }        
+    }
 };
         
 void 
@@ -621,247 +664,98 @@ Shape::Shape(int shapeId, string t, string shapeName)
 void
 Shape::drawShape()
 {
+    // Objectpath 
+    string filePath = "./BlenderObjs/";
+    LeitorObj *leitorObj = new LeitorObj();
+    
     if (this->type.compare("cone") == 0)
     {
-        this->drawCone();
+        filePath += "Cone.obj";            
     }
     else if (this->type.compare("sphere") == 0)
     {
-        this->drawSphere();
+        filePath += "Sphere.obj";        
     }
     else if (this->type.compare("cube") == 0)
     {
-        this->drawCube();
+        filePath += "Cube.obj";
     }
     else if (this->type.compare("torus") == 0)
     {
-        this->drawTorus();
+        filePath += "Torus.obj";
     }
     else {
         cout << "Seloco tio, n tem esse shape aqui n... Ce ta trapaceando?" << endl;
-    }
-}
-
-// .
-// . Draw a cone.
-// .
-void 
-Shape::drawCone()
-{
-
-    // do exemplo: http://www.opengl-tutorial.org/beginners-tutorials/tutorial-2-the-first-triangle/;
-    static const GLfloat g_vertex_buffer_data[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f,  0.5f, 0.0f,
-    };
-
-    // This will identify our vertex buffer
-    GLuint vertexbuffer;
-    // Generate 1 buffer, put the resulting identifier in vertexbuffer
-    glGenBuffers(1, &vertexbuffer);
-    // The following commands will talk about our 'vertexbuffer' buffer
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    // Give our vertices to OpenGL.
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-    // 1rst attribute buffer : vertices
-
-    glEnableVertexAttribArray(this->shapeId);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-            0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-            3,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // array buffer offset
-    );
-    // Draw the triangle !
-    glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-    glDisableVertexAttribArray(this->shapeId);
-}
-    
-// .
-// . Draw a sphere
-// .    
-void 
-Shape::drawSphere()
-{
-    /*
-    // Desenhar a Sphera.
-    double PI = 3.14159;
-    
-    // Vertex positions
-    std::vector<glm::vec3> v; // positions
-    std::vector<glm::vec2> t; // texture map 
-    std::vector<glm::vec3> n; // normals 
-
-    float   x1, x2,
-            y1, y2,
-            z1, z2;
-
-    float   inc1, inc2,
-            inc3, inc4,
-            radius1, radius2;            
-
-    int Resolution = 100;
-    
-    for(int w = 0; w < Resolution; w++) {
-            for(int h = (-Resolution/2); h < (Resolution/2); h++){
-
-                
-                inc1 = (w/(float)Resolution)*2*PI;
-                inc2 = ((w+1)/(float)Resolution)*2*PI;
-                
-                inc3 = (h/(float)Resolution)*PI;
-                inc4 = ((h+1)/(float)Resolution)*PI;
-
-                
-                X1 = sin(inc1);
-                Y1 = cos(inc1);
-                X2 = sin(inc2);
-                Y2 = cos(inc2);
-
-                // store the upper and lower radius, remember everything is going to be drawn as triangles
-                Radius1 = Radius*cos(inc3);
-                Radius2 = Radius*cos(inc4);
-
-                Z1 = Radius*sin(inc3); 
-                Z2 = Radius*sin(inc4);
-
-                // insert the triangle coordinates
-                v.push_back(glm::vec3(Radius1*X1,Z1,Radius1*Y1));
-                v.push_back(glm::vec3(Radius1*X2,Z1,Radius1*Y2));
-                v.push_back(glm::vec3(Radius2*X2,Z2,Radius2*Y2));
-
-
-
-                v.push_back(glm::vec3(Radius1*X1,Z1,Radius1*Y1));
-                v.push_back(glm::vec3(Radius2*X2,Z2,Radius2*Y2));
-                v.push_back(glm::vec3(Radius2*X1,Z2,Radius2*Y1));
-
-
-                // insert the normal data
-                n.push_back(glm::vec3(X1,Z1,Y1)/ glm::length(glm::vec3(X1,Z1,Y1)));
-                n.push_back(glm::vec3(X2,Z1,Y2)/ glm::length(glm::vec3(X2,Z1,Y2)));
-                n.push_back(glm::vec3(X2,Z2,Y2)/ glm::length(glm::vec3(X2,Z2,Y2)));
-                n.push_back(glm::vec3(X1,Z1,Y1)/ glm::length(glm::vec3(X1,Z1,Y1)));
-                n.push_back(glm::vec3(X2,Z2,Y2)/ glm::length(glm::vec3(X2,Z2,Y2)));
-                n.push_back(glm::vec3(X1,Z2,Y1)/ glm::length(glm::vec3(X1,Z2,Y1)));
-            }    
+        return;
     }
 
 
-    // finally, create the buffers and bind the data to them
-    std::vector<unsigned short> indices;
-    std::vector<glm::vec3> indexed_vertices;
-    std::vector<glm::vec2> indexed_uvs;
-    std::vector<glm::vec3> indexed_normals;
-    indexVBO(v, t, n, indices, indexed_vertices, indexed_uvs, indexed_normals);
+    float ratio = 640 / 480;
+    float PI = 3.141516;
+    float radianos = (45 * PI) / 180;
 
-    
-    
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
+    glm::mat4 projection = glm::perspective( radianos, ratio, 1.f, 100.f);
 
-    
-    glGenBuffers(1, &uvbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);
+    glm::mat4 view(1.f);
+    view = glm::translate(view, glm::vec3(-0., -5., -10));
 
-    
-    glGenBuffers(1, &normalbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
+    leitorObj->Load(filePath);
+    leitorObj->Fill(this->data, this->normals, this->colors);
+    this->initializeBuffers();
 
-    // Generate a buffer for the indices as well 
-    glGenBuffers(1, &elementbuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
 
-    
-    // store the number of indices for later use
-    size = indices.size();
-    
-        // clean up after us
-    indexed_normals.clear();
-    indexed_uvs.clear();
-    indexed_vertices.clear();
-    indices.clear();
-    n.clear();
-    v.clear();
-    t.clear();
-    */
+    cout << "VAO for this is "  << VAO_ << endl;
+    glBindVertexArray(VAO_);
+
+    cout << "Data for this is "  << this->data.size() << endl;
+    GLuint size = this->data.size() * sizeof(glm::vec3);
+    glDrawArrays(GL_TRIANGLES, 0, size);
+    glBindVertexArray(0);
+
+    //return true;
 
 }
-        
 
-// .
-// . Draw a cube
-// .            
 
-// Aprendi aqui: http://www.opengl-tutorial.org/beginners-tutorials/tutorial-4-a-colored-cube/
 void 
-Shape::drawCube()
+Shape::initializeBuffers()
 {
-        /*
-    GLfloat vertices[8] = {
-            {-1, -1, -1},
-            {1,  -1, -1},
-            {1,  1,  -1},
-            {-1, 1,  -1},
-            {-1, -1, 1},
-            {1,  -1, 1},
-            {1,  1,  1},
-            {-1, 1,  1}
-    };
+    glGenVertexArrays(1, &VAO_);
+    glBindVertexArray(VAO_);
 
-    GLfloat colors[8] = {
-            {0, 0, 0},
-            {1, 0, 0},
-            {1, 1, 0},
-            {0, 1, 0},
-            {0, 0, 1},
-            {1, 0, 1},
-            {1, 1, 1},
-            {0, 1, 1}
-    };
+    GLuint buffers[4];
+    glGenBuffers(4, buffers);
 
-    // Draw the triangle !
-    glDrawArrays(GL_TRIANGLES, 0, 12*3); // 12*3 indices starting at 0 -> 12 triangles -> 6 squares
+    // vertecies
+    cout << "Vertice size " << data.size() << endl;
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+    GLuint bufferVSize = data.size() * sizeof(glm::vec3);
+    glBufferData(GL_ARRAY_BUFFER, bufferVSize, &data[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
 
-    //GLuint colorbuffer;
-    //glGenBuffers(this->shapeId, &colorbuffer);
-    //glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
+    // colours
+    cout << "Color size " << colors.size() << endl;
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+    GLuint bufferCSize = colors.size() * sizeof(glm::vec3);
+    glBufferData(GL_ARRAY_BUFFER, bufferCSize, &colors[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
 
-    // 2nd attribute buffer : colors
-    glEnableVertexAttribArray(this->shapeId);
-    //glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-    glVertexAttribPointer(
-        this->shapeId,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-        3,                                // size
-        GL_FLOAT,                         // type
-        GL_FALSE,                         // normalized?
-        0,                                // stride
-        (void*)0                          // array buffer offset
-    );
-    glDisableVertexAttribArray(this->shapeId);*/
+    // normals
+    cout << "Normals size " << normals.size() << endl;
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[3]);
+    const int sizeNormals = normals.size() * sizeof(vec3);
+    glBufferData(GL_ARRAY_BUFFER, sizeNormals, &normals[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(2);
 
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glDeleteBuffers(4, buffers);
 }
-
-// .
-// . Draw a torus
-// .                
-void 
-Shape::drawTorus()
-{
-
-}
-
-
 
 
 
