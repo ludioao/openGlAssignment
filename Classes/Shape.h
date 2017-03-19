@@ -23,7 +23,10 @@ class Shape {
         GLuint VAO_;
 
         glm::mat4 modelShape;
-
+        
+        float   colorR,
+                colorG,
+                colorB;
     
     public:
         // VARIAVEIS COMPARTILHADAS P/ SEREM UTILIZADSA PELO PARSER
@@ -50,7 +53,13 @@ class Shape {
         bool getScalable() { return scalable; }; 
         bool getRotateable() { return rotateable; };
         bool getTranslateable() { return translateable; };
-
+        
+        void setColor(float r, float g, float b)
+        {
+            this->colorR = r;
+            this->colorG = g;
+            this->colorB = b;
+        };
         
         void setRotateable(float Angulo, glm::vec3 Direcao)
         {

@@ -26,8 +26,6 @@ using namespace std;
 
 #define SHADER_PATH "./Shaders/"
 
-
-
 inline bool _check_gl_error(const char *file, int line) {
         GLenum err (glGetError());
 
@@ -617,9 +615,16 @@ Drawer::setCam(float, float, float)
 };
         
 void 
-Drawer::setColor(string, float, float, float)
+Drawer::setColor(string shapeName, float r, float g, float b)
 {
-
+    for (auto _drawable : currentInstance->objects)
+    {
+        if (_drawable->getName().compare(shapeName) == 0)
+        {
+            cout << "Ok! Color for this shape now is " << r << " " << g  << " " << b << endl;
+            _drawable->setColor(r, g, b);
+        }        
+    }
 };
         
 void 
@@ -653,6 +658,12 @@ Shape::Shape(int shapeId, string t, string shapeName)
     this->shapeId   = shapeId;
     this->type      = t;
     this->shapeName = shapeName;
+
+    // Cor inicial eh um verde mt loko...
+    this->colorR = 0.0;
+    this->colorG = 1.0;
+    this->colorB = 0.0;
+
     //this->drawShape();
 }
 
@@ -755,6 +766,17 @@ Shape::initializeBuffers()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glDeleteBuffers(4, buffers);
+
+
+    // Be sure to activate the shader
+    glUseProgram(currentInstance->getProgramId());
+  
+    // Update the uniform color
+    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "ourColor");
+    
+    // atribui cor verde.
+    glUniform4f(vertexColorLocation, this->colorR, this->colorG, this->colorB, 1.0f);
+
 }
 
 
