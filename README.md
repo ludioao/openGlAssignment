@@ -20,7 +20,7 @@ https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Introduction
 - [x] scale name1 float float float
 - [x] rotate name1 float float float
 - [ ] lookat float float float
-- [ ] cam float float float
+- [x] cam float float float
 - [x] color name1 float float float
 - [ ] axis
 - [ ] save filename
