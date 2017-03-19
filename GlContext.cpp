@@ -196,6 +196,14 @@ void OpenGLContext::drawObjects() const {
         data2.push_back(glm::vec3(-2.0, 0, 0));
         data2.push_back(glm::vec3(2.0, 0, 0));
         this->drawAxis(data2, 0.0, 1.0, 0.0);        
+
+
+        // Axis Z
+        vector<glm::vec3> dataZ;
+        dataZ.push_back(glm::vec3(0, 0, -2.0));
+        dataZ.push_back(glm::vec3(0.0, 0, 2.0));
+        this->drawAxis(dataZ, 0.0, 0.0, 1.0);        
+        
     }
     
 
