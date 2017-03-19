@@ -54,8 +54,16 @@ class OpenGLContext
         bool lightning;
         string shading;
 
+        bool enableAxis;
+
+        
+        // seguindo o tutorial bolado:
+        // https://learnopengl.com/#!Getting-started/Camera
+
         glm::vec3 cameraPos;
-        glm::vec3 cameraFront;
+        glm::vec3 cameraTarget;
+        glm::vec3 cameraDirection;
+        glm::vec3 cameraRight;
         glm::vec3 cameraUp;
 
         float cameraZoom;
@@ -76,6 +84,7 @@ class OpenGLContext
         void render() const;       // Render Loop
         void drawObjects() const;
 
+        void drawAxis(vector<glm::vec3> custom_vertices, float colorR, float colorG, float colorB) const;
 
     private:
         unsigned int VAOId;

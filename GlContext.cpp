@@ -97,11 +97,21 @@ OpenGLContext::OpenGLContext(int argc, char *argv[]) {
 
     glEnable(GL_DEPTH_TEST);
 
+    this->enableAxis = false;
     // Seta camera.
     this->cameraZoom  = 1.0;    
-    this->cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
-    this->cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-    this->cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+    // this->cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+    // this->cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    // this->cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+    this->cameraPos     = glm::vec3(0.0f, 0.0f, 3.0f); // posicao da camera.
+    this->cameraTarget  = glm::vec3(0.0f, 0.0f, 0.0f); // onde a camera ta olhando.
+    this->cameraDirection = glm::normalize(this->cameraPos - this->cameraTarget);  
+
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    this->cameraRight = glm::normalize(glm::cross(up, cameraDirection));
+    this->cameraUp = glm::cross(this->cameraDirection, this->cameraRight);
+
+
 
 	if (error != GLEW_OK) {
 		throw std::runtime_error("Error initializing GLEW.");
@@ -170,6 +180,31 @@ void OpenGLContext::render() const {
 }
 
 void OpenGLContext::drawObjects() const {
+
+
+    // Draw axis.
+    if (currentInstance->enableAxis) 
+    {
+        // Axis Y.
+        vector<glm::vec3> data3;
+        data3.push_back(glm::vec3(0.0, -2.0, 0));
+        data3.push_back(glm::vec3(0.0, 2.0, 0));
+        this->drawAxis(data3, 1.0, 0.0, 0.0);        
+
+        // Axis X.
+        vector<glm::vec3> data2;
+        data2.push_back(glm::vec3(-2.0, 0, 0));
+        data2.push_back(glm::vec3(2.0, 0, 0));
+        this->drawAxis(data2, 0.0, 1.0, 0.0);        
+    }
+    
+
+/*
+    vector<glm::vec3> data3;
+    data2.push_back(glm::vec3(0, 0, 0));
+    data2.push_back(glm::vec3(0, 1.0, 0));
+    this->drawAxis(data3, 0.0, 0.0, 1.0); 
+*/
     
     if (objects.size() == 0) {
         cout << "Nenhum objeto na renderizacao " << endl;
@@ -321,270 +356,97 @@ unsigned int OpenGLContext::linkShaderProgram(unsigned int vertexShaderId,
 	return shaderProgramId;
 }
 
-// void OpenGLContext::drawAxis()
-// {
-//     GLuint VertexArrayID;
-//     glGenVertexArrays(10, VertexArrayID);
-//     glGenBuffers(18, vertexbuffer);
-//     fLineOneColor[0] = 0.0f; fLineOneColor[1] = 0.0f; fLineOneColor[2] = 1.0f;
-//     fLineOneColor[3] = 0.0f; fLineOneColor[4] = 0.0f; fLineOneColor[5] = 1.0f;
+void OpenGLContext::drawAxis(vector<glm::vec3> custom_vertices, float colorR, float colorG, float colorB) const
+{
+    int programId = currentInstance->getProgramId();        
+    cout << "ProgramID > " << programId << endl;
+    glUseProgram(programId);  // 
 
-//     fLineTwoColor[0] = 0.0f; fLineTwoColor[1] = 1.0f; fLineTwoColor[2] = 0.0f;
-//     fLineTwoColor[3] = 0.0f; fLineTwoColor[4] = 1.0f; fLineTwoColor[5] = 0.0f;
+    GLuint  tempVaoID,
+            tempVboId;
 
-//     fLineThreeColor[0] = 1.0f; fLineThreeColor[1] = 0.0f; fLineThreeColor[2] = 0.0f;
-//     fLineThreeColor[3] = 1.0f; fLineThreeColor[4] = 0.0f; fLineThreeColor[5] = 0.0f;
+    glGenVertexArrays(1, &tempVaoID);
+    glGenBuffers(1, &tempVboId);
 
+    // bind nos vertices.
+    glBindBuffer(GL_ARRAY_BUFFER, tempVboId);    
+    GLuint bufferVerticeSize = custom_vertices.size() * sizeof(glm::vec3);
 
-//     shader.Use();
-//         glUniformMatrix4fv(shader("MVP"), 1, GL_FALSE, MVP);
-//         glBindVertexArray(VertexArrayID[0]);
+    glBufferData(GL_ARRAY_BUFFER, bufferVerticeSize, &custom_vertices[0], GL_STATIC_DRAW);    
+    glBindVertexArray(tempVaoID);
+    
+    // positions attributes.
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    
+    // normals.
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+    
+    // Trata transformacao da Camera;
+    glm::mat4 view;
+    view = glm::lookAt(currentInstance->cameraPos, currentInstance->cameraTarget, currentInstance->cameraUp);
+    glm::mat4 projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
+    // Pega os uniformes.
 
-//         static const GLfloat g_vertex_buffer_data[] = {
-//             0, 0, 0,
-//              0, 0, 0.5f,
-//         };
-//         glGenBuffers(18, vertexbuffer);
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[0]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    GLint viewLoc = glGetUniformLocation(currentInstance->getProgramId(), "view");
+    GLint projLoc = glGetUniformLocation(currentInstance->getProgramId(), "projection");
+    
+    // Passa as matrizes. pro shader.
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-//         glEnableVertexAttribArray(0);
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[0]);
-//         glVertexAttribPointer(
-//             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-//             3,                  // size
-//             GL_FLOAT,           // type
-//             GL_FALSE,           // normalized?
-//             0,                  // stride
-//             (void*)0            // array buffer offset
-//         );
-//         glDrawArrays(GL_LINES, 0, 2);
+    // Create transformations
+    glm::mat4 transform;
+    transform = glm::scale(transform, glm::vec3(1.0f, 1.0f, 1.0f));
+    //transform = glm::translate(transform, glm::vec3(this->transX, this->transY, this->transZ));
+    //transform = glm::rotate(transform, this->anguloRotacao, this->DirecaoRotate);
 
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[9]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(fLineOneColor), fLineOneColor, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(1);
-//         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    // Get matrix's uniform location and set matrix
+    GLint transformLoc = glGetUniformLocation(currentInstance->getProgramId(), "transform");
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));        
 
-//         glBindVertexArray(VertexArrayID[1]);
+    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "ourColor");
+    glUniform4f(vertexColorLocation, colorR, colorG, colorB, 1.0f);
 
-//         static const GLfloat vertex_buffer_data[] = {
-//              0, 0, 0,
-//              0,  0.5f, 0,
-//         };
+    // Pega o valor VAO setado na funcao anterior.
+    glBindVertexArray(tempVaoID);
+    
+    GLint modelLoc = glGetUniformLocation(currentInstance->getProgramId(), "model");
+    glBindVertexArray(tempVaoID);
+    glm::mat4 model;
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glDrawArrays(GL_LINES, 0, 2);
+    glBindVertexArray(0);    
 
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[1]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(0);
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[1]);
-//         glVertexAttribPointer(
-//             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-//             3,                  // size
-//             GL_FLOAT,           // type
-//             GL_FALSE,           // normalized?
-//             0,                  // stride
-//             (void*)0            // array buffer offset
-//         );
-//         glDrawArrays(GL_LINES, 0, 2);
+    // Blue.
+    //glUniform4f(vertexColorLocation, 0.0f, 0.0f, 1.0f, 1.0f);
+    
+    // Green
+    // glUniform4f(vertexColorLocation, 0.0f, 1.0f, 0.0f, 1.0f);
 
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[10]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(fLineTwoColor), fLineTwoColor, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(1);
-//         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    // Red
+    // glUniform4f(vertexColorLocation, 1.0f, 0.0f, 0.0f, 1.0f);
 
-//         glBindVertexArray(VertexArrayID[2]);
+    
 
-//         static const GLfloat vertex_buffer_data3[] = {
-//              0, 0, 0,
-//              0.5f, 0, 0,
-//         };
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[2]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data3), vertex_buffer_data3, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(0);
-//     //    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer3);
-//         glVertexAttribPointer(
-//             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-//             3,                  // size
-//             GL_FLOAT,           // type
-//             GL_FALSE,           // normalized?
-//             0,                  // stride
-//             (void*)0            // array buffer offset
-//         );
-//         glDrawArrays(GL_LINES, 0, 2);
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[11]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(fLineThreeColor), fLineThreeColor, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(1);
-//         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-//         glBindVertexArray(VertexArrayID[3]);
-
-//         static const GLfloat vertex_buffer_data4[] = {
-//              0.5f, 0, 0,
-//              0.4f,  0.1f, 0,
-//         };
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[3]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data4), vertex_buffer_data4, GL_STATIC_DRAW);
-
-//         glEnableVertexAttribArray(0);
-//     //    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer4);
-//         glVertexAttribPointer(
-//             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-//             3,                  // size
-//             GL_FLOAT,           // type
-//             GL_FALSE,           // normalized?
-//             0,                  // stride
-//             (void*)0            // array buffer offset
-//         );
-//         glDrawArrays(GL_LINES, 0, 2);
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[12]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(fLineThreeColor), fLineThreeColor, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(1);
-//         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-//         glBindVertexArray(VertexArrayID[4]);
-
-//         static const GLfloat vertex_buffer_data5[] = {
-//             0.5f, 0, 0,
-//             0.4f, -0.1f, 0,
-//         };
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[4]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data5), vertex_buffer_data5, GL_STATIC_DRAW);
-
-//         glEnableVertexAttribArray(0);
-//     //    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer5);
-//         glVertexAttribPointer(
-//             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-//             3,                  // size
-//             GL_FLOAT,           // type
-//             GL_FALSE,           // normalized?
-//             0,                  // stride
-//             (void*)0            // array buffer offset
-//         );
-//         glDrawArrays(GL_LINES, 0, 2);
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[13]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(fLineThreeColor), fLineThreeColor, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(1);
-//         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-//         glBindVertexArray(VertexArrayID[5]);
-
-//         static const GLfloat vertex_buffer_data6[] = {
-//             0, 0.5f, 0,
-//              0.1f,  0.4f, 0,
-//         };
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[5]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data6), vertex_buffer_data6, GL_STATIC_DRAW);
-
-//         glEnableVertexAttribArray(0);
-//     //    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer6);
-//         glVertexAttribPointer(
-//             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-//             3,                  // size
-//             GL_FLOAT,           // type
-//             GL_FALSE,           // normalized?
-//             0,                  // stride
-//             (void*)0            // array buffer offset
-//         );
-//         glDrawArrays(GL_LINES, 0, 2);
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[14]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(fLineTwoColor), fLineTwoColor, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(1);
-//         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-//         glBindVertexArray(VertexArrayID[6]);
-
-//         static const GLfloat vertex_buffer_data7[] = {
-//             0, 0.5f, 0,
-//              -0.1f,  0.4f, 0,
-//         };
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[6]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data7), vertex_buffer_data7, GL_STATIC_DRAW);
-
-//         glEnableVertexAttribArray(0);
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[6]);
-//         glVertexAttribPointer(
-//             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-//             3,                  // size
-//             GL_FLOAT,           // type
-//             GL_FALSE,           // normalized?
-//             0,                  // stride
-//             (void*)0            // array buffer offset
-//         );
-//         glDrawArrays(GL_LINES, 0, 2);
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[15]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(fLineTwoColor), fLineTwoColor, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(1);
-//         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-//         glBindVertexArray(VertexArrayID[7]);
-
-//         static const GLfloat vertex_buffer_data8[] = {
-//             0, 0, 0.5f,
-//              -0.1f, 0, 0.4f,
-//         };
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[7]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data8), vertex_buffer_data8, GL_STATIC_DRAW);
-
-//         glEnableVertexAttribArray(0);
-//     //    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer8);
-//         glVertexAttribPointer(
-//             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-//             3,                  // size
-//             GL_FLOAT,           // type
-//             GL_FALSE,           // normalized?
-//             0,                  // stride
-//             (void*)0            // array buffer offset
-//         );
-//         glDrawArrays(GL_LINES, 0, 2);
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[16]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(fLineOneColor), fLineOneColor, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(1);
-//         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-//         glBindVertexArray(VertexArrayID[8]);
-
-//         static const GLfloat vertex_buffer_data9[] = {
-//             0, 0, 0.5f,
-//              0.1f, 0, 0.4f,
-//         };
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[8]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data9), vertex_buffer_data9, GL_STATIC_DRAW);
-
-//         glEnableVertexAttribArray(0);
-//     //    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer9);
-//         glVertexAttribPointer(
-//             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-//             3,                  // size
-//             GL_FLOAT,           // type
-//             GL_FALSE,           // normalized?
-//             0,                  // stride
-//             (void*)0            // array buffer offset
-//         );
-//         glDrawArrays(GL_LINES, 0, 2);
-
-//         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[17]);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(fLineOneColor), fLineOneColor, GL_STATIC_DRAW);
-//         glEnableVertexAttribArray(1);
-//         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-//     //Destroy vao and vbo
-//     glDeleteBuffers(20, vertexbuffer);
-//     glDeleteVertexArrays(10, VertexArrayID);
+    /*static const GLfloat g_vertex_buffer_data[] = {
+            0, 0, 0,
+            0, 0, 0.5f,
+    };
 
 
-// }
+        static const GLfloat vertex_buffer_data[] = {
+             0, 0, 0,
+             0,  0.5f, 0,
+        };
+
+          static const GLfloat vertex_buffer_data3[] = {
+             0, 0, 0,
+             0.5f, 0, 0,
+        };*/
+
+}
 
 
 /* 
@@ -743,7 +605,7 @@ Drawer::listen()
             this->exit();
             cout << "Program finished." << endl;
             //currentInstance->finalize();
-            delete currentInstance;            
+            //delete currentInstance;            
             break;
         }
         else {
@@ -936,7 +798,7 @@ Drawer::setColor(string shapeName, float r, float g, float b)
 void 
 Drawer::axis()
 {
-
+    currentInstance->enableAxis = !currentInstance->enableAxis;
 };
         
 void 
@@ -1034,8 +896,7 @@ Shape::drawShape()
     glm::mat4 model;
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glDrawArrays(GL_TRIANGLES, 0, this->data.size() * sizeof(glm::vec3));
-    glBindVertexArray(0);
-    
+    glBindVertexArray(0);    
     
 }
 
@@ -1079,21 +940,12 @@ Shape::initializeBuffers()
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
     
-    // nesse ponto?!
-    // Clear the colorbuffer
-    /*glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);*/
-
     // Trata transformacao da Camera;
     glm::mat4 view;
-    view = glm::lookAt(currentInstance->cameraPos, currentInstance->cameraPos + currentInstance->cameraFront, currentInstance->cameraUp);
+    view = glm::lookAt(currentInstance->cameraPos, currentInstance->cameraTarget, currentInstance->cameraUp);
     glm::mat4 projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
     // Pega os uniformes.
     
-    // check_gl_error();
-
-
-   
     GLint viewLoc = glGetUniformLocation(currentInstance->getProgramId(), "view");
     GLint projLoc = glGetUniformLocation(currentInstance->getProgramId(), "projection");
     
@@ -1101,11 +953,6 @@ Shape::initializeBuffers()
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
         
-
-    // check_gl_error();
-
-    
-
     // Cores.
     // Atualiza uniform de cores.
     GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "ourColor");
