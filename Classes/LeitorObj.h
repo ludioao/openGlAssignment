@@ -12,6 +12,9 @@ using glm::vec3;
 using std::string;
 using std::vector;
 
+// Classe responsavel pela leitura do arquivo OBJ.
+// nao faz nada d+
+
 struct Face
 {
     int vInd[3];

@@ -9,6 +9,7 @@
 #include <GL/gl.h>
 
 // biblioteca externa GLM. 
+#include <glm/glm.hpp>
 #include <glm/vec2.hpp>// glm::vec2
 #include <glm/vec3.hpp> // glm::vec3
 #include <glm/vec4.hpp> // glm::vec4, glm::ivec4
@@ -21,6 +22,7 @@
 #include <glm/gtc/type_precision.hpp>// glm::i8vec2, glm::i32vec2
 #include <glm/exponential.hpp>// glm::pow
 #include <glm/gtc/random.hpp>// glm::vecRand3
+
 
 #include "./Classes/Shape.h"
 
@@ -51,6 +53,12 @@ class OpenGLContext
         vector<Shape*> objects;
         bool lightning;
         string shading;
+
+        glm::vec3 cameraPos;
+        glm::vec3 cameraFront;
+        glm::vec3 cameraUp;
+
+        float cameraZoom;
 
         OpenGLContext(int argc, char *argv[]);     // Constructor
         ~OpenGLContext();    // Destructor

@@ -6,6 +6,21 @@
 #include <stdexcept>
 #include <algorithm>
 
+
+#include <glm/glm.hpp>
+#include <glm/vec2.hpp>// glm::vec2
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4, glm::ivec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
+#include <glm/gtc/type_ptr.hpp> // glm::value_ptr
+#include <glm/geometric.hpp>// glm::cross, glm::normalize
+#include <glm/packing.hpp>// glm::packUnorm2x16
+#include <glm/integer.hpp>// glm::uint
+#include <glm/gtc/type_precision.hpp>// glm::i8vec2, glm::i32vec2
+#include <glm/exponential.hpp>// glm::pow
+#include <glm/gtc/random.hpp>// glm::vecRand3
+
 #define GL_GLEXT_PROTOTYPES 1
 #define GL3_PROTOTYPES 1
 #include <GL/glew.h>
@@ -25,6 +40,9 @@ namespace {
 using namespace std;
 
 #define SHADER_PATH "./Shaders/"
+
+#define SCREENWIDTH 640
+#define SCREENHEIGHT 480
 
 inline bool _check_gl_error(const char *file, int line) {
         GLenum err (glGetError());
@@ -54,6 +72,13 @@ inline bool _check_gl_error(const char *file, int line) {
 #define return_check_gl_error() if (_check_gl_error(__FILE__,__LINE__)) return false;
 
 
+struct CameraStruc {
+    int Zoom = 1.0;
+};
+
+CameraStruc Camera;
+
+
 OpenGLContext::OpenGLContext(int argc, char *argv[]) {
 	glutInit(&argc, argv);     // Initialize GLUT
 
@@ -61,7 +86,7 @@ OpenGLContext::OpenGLContext(int argc, char *argv[]) {
 	glutInitContextProfile(GLUT_CORE_PROFILE); // IMPORTANT! or later versions, core was introduced only with 3.2
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH); // IMPORTANT! Double buffering!
 
-	glutInitWindowSize(640, 480);
+	glutInitWindowSize(SCREENWIDTH, SCREENHEIGHT);
 	glutCreateWindow("Trabalho de CG -- Ludio, Rogerio");      // Create window with the given title
 
 	glutDisplayFunc(OpenGLContext::glutRenderCallback); // Register callback handler for window re-paint event
@@ -69,6 +94,14 @@ OpenGLContext::OpenGLContext(int argc, char *argv[]) {
     glutIdleFunc(OpenGLContext::glutRedisplayCallback);
 
 	GLenum error = glewInit();
+
+    glEnable(GL_DEPTH_TEST);
+
+    // Seta camera.
+    this->cameraZoom  = 1.0;    
+    this->cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+    this->cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    this->cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
 	if (error != GLEW_OK) {
 		throw std::runtime_error("Error initializing GLEW.");
@@ -138,7 +171,12 @@ void OpenGLContext::render() const {
 
 void OpenGLContext::drawObjects() const {
     
-    cout << "We have " << objects.size() << "objects" << endl;
+    if (objects.size() == 0) {
+        cout << "Nenhum objeto na renderizacao " << endl;
+        return;
+    }
+    
+
     for (auto _drawable : objects)
     {
         _drawable->drawShape();
@@ -296,7 +334,7 @@ unsigned int OpenGLContext::linkShaderProgram(unsigned int vertexShaderId,
 //
 Drawer::Drawer()
 {   
-    cout << "Constructor " << endl;
+    //cout << "Constructor " << endl;
 }
 
 //
@@ -304,7 +342,7 @@ Drawer::Drawer()
 //
 Drawer::~Drawer()
 {
-    cout << "destructing " << endl;
+    //cout << "destructing " << endl;
 }
 
 
@@ -325,28 +363,12 @@ void
 Drawer::listen()
 {
     cout << "Initializing openGL " << endl;
-
-    string command = "";
-
-    string  c1 = "",
-            c2 = "",
-            c3 = "",
-            c4 = "";
-
-    auto cVAOId = currentInstance->getVAOId();
-
-    cout << "Current VAOId " << cVAOId << endl;
-
-    
-
-    float   
-            f1 = 0.0,
-            f2 = 0.0,
-            f3 = 0.0,
-            f4 = 0.0;            
-
-    // read until exit is needed.
+    string command = "", c1 = "", c2 = "",  c3 = "", c4 = "";
+    float f1, f2, f3, f4;
+         
+    // Fica lendo ateh escrever "quit"
     while ( 1 ) {
+        f1 = f2 = f3 = f4 = 0.0;
         cout << "Digite seu comando " << endl;
         currentInstance->render();
 
@@ -469,36 +491,33 @@ Drawer::listen()
 
 
 //
-// Metodos de Comando 
-//
-
-
-//
 // Adicionar um shape.
 //
 void
 Drawer::addShape(string type, string shapeName)
 { 
 
+    // Verifica se eh um shape valido
     if (this->isValidShape(type)) {
-
-        // 
+        // caso seja valido. entao cria a parada.
         cout << "Ok!! Creating " << type << ": " << shapeName << endl;
-
+        // ponteiro bunitnhiu
         Shape *customShape;
         int objectSize = currentInstance->objects.size();
-
+        // esse objectsize eh como se fosse pra pegar o ID do shape.. ta lgd??
         customShape = new Shape(objectSize, type, shapeName);
         currentInstance->objects.push_back(customShape);
-
     }
     else {
+        // ok , nao pode fazer a criacao desse shape
         cout << "Shape not recognized." << endl;    
     }    
     //console_log("Ok!! Creating shape > " + shapeName);
 };
 
 
+// nao sei pra q eu fiz essa funcao 
+// achei melhor percorrer toda vez... pq dai eu n preciso ficar manipulando o objeto ....
 int
 Drawer::findShape(string shapeName)
 {
@@ -511,7 +530,9 @@ Drawer::findShape(string shapeName)
 }
 
 
-
+// Remove um shape do vector. 
+// Verifica se existe um vector com o nome
+// e remove pelo indice... 
 void
 Drawer::removeShape(string shapeName)
 {
@@ -522,6 +543,8 @@ Drawer::removeShape(string shapeName)
     }
 };
 
+
+// Adiciona luz no shape
 void 
 Drawer::addLight(string shapeName, float f1, float f2, float f3)
 {
@@ -536,6 +559,9 @@ Drawer::addLight(string shapeName, float f1, float f2, float f3)
     // }
 };
 
+
+// vei acho q nem precisa comentar, esses metodos tao mt intuitivo...
+// Remove a luz do shape ()
 void 
 Drawer::removeLight(string shapeName)
 {
@@ -578,10 +604,18 @@ Drawer::setProjection(string type)
 
 };
         
-void 
-Drawer::setTranslate(string, float, float, float)
-{
 
+// Metodos pra trabalhar com transformacao.        
+void 
+Drawer::setTranslate(string shapeName, float x, float y, float z)
+{
+    for (auto _drawable : currentInstance->objects)
+    {
+        if (_drawable->getName().compare(shapeName) == 0)
+        {
+            _drawable->setTranslateable(x, y, z);
+        }        
+    }
 };
         
 void 
@@ -597,9 +631,15 @@ Drawer::setScale(string shapeName, float x, float y, float z)
 };
         
 void 
-Drawer::setRotate(string shapeName, float, float, float, float)
+Drawer::setRotate(string shapeName, float angle, float x, float y, float z)
 {
-
+    for (auto _drawable : currentInstance->objects)
+    {
+        if (_drawable->getName().compare(shapeName) == 0)
+        {
+            _drawable->setRotateable(angle, glm::vec3(x, y, z));
+        }        
+    }
 };
         
 void
@@ -642,7 +682,7 @@ Drawer::save(string filename)
 void 
 Drawer::exit()
 {
-
+    cout << "Finalizando openGL ! u.u" << endl;
 };
 
 
@@ -664,6 +704,17 @@ Shape::Shape(int shapeId, string t, string shapeName)
     this->colorG = 1.0;
     this->colorB = 0.0;
 
+    this->rotateable = false;
+    this->scalable = false;
+    this->translateable = false;
+
+    // sem transladar.
+    this->transX = this->transY = this->transZ = 0.0;
+
+    // rotacao inicial
+    this->anguloRotacao = 0.0;
+    this->DirecaoRotate = glm::vec3(0.0, 0.0, 0.0);
+
     //this->drawShape();
 }
 
@@ -679,103 +730,133 @@ Shape::drawShape()
     string filePath = "./BlenderObjs/";
     LeitorObj *leitorObj = new LeitorObj();
     
-    if (this->type.compare("cone") == 0)
-    {
+    if (this->type.compare("cone") == 0) 
         filePath += "Cone.obj";            
-    }
-    else if (this->type.compare("sphere") == 0)
-    {
+    else if (this->type.compare("sphere") == 0) 
         filePath += "Sphere.obj";        
-    }
-    else if (this->type.compare("cube") == 0)
-    {
+    else if (this->type.compare("cube") == 0)  
         filePath += "Cube.obj";
-    }
-    else if (this->type.compare("torus") == 0)
-    {
+    else if (this->type.compare("torus") == 0) 
         filePath += "Torus.obj";
-    }
     else {
         cout << "Seloco tio, n tem esse shape aqui n... Ce ta trapaceando?" << endl;
         return;
     }
 
-
-    float ratio = 640 / 480;
-    float PI = 3.141516;
-    float radianos = (45 * PI) / 180;
-
-    glm::mat4 projection = glm::perspective( radianos, ratio, 1.f, 100.f);
-
-    glm::mat4 view(1.f);
-    view = glm::translate(view, glm::vec3(-0., -5., -10));
-
+    // Carrega o arquivo .
     leitorObj->Load(filePath);
+
+    // Preenche os vetores com os dados do arquivo OBJ 
     leitorObj->Fill(this->data, this->normals, this->colors);
+
+    // glGenBuffers(1, &VBO);
+    // Inicializa os buffers.
     this->initializeBuffers();
 
+    // Pega o valor VAO setado na funcao anterior.
+    //glBindVertexArray(VAO_);
+    
+    // GLUint lightVAO;
+    // glGenVertexArrays(1, &lightVAO);
+    // glBindVertexArray(lightVAO);
+    // glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    cout << "VAO for this is "  << VAO_ << endl;
-    glBindVertexArray(VAO_);
-
-    cout << "Data for this is "  << this->data.size() << endl;
-    GLuint size = this->data.size() * sizeof(glm::vec3);
-    glDrawArrays(GL_TRIANGLES, 0, size);
+    // Por fim, desenha 
+    //GLuint size = this->data.size() * sizeof(glm::vec3);
+    //glDrawArrays(GL_TRIANGLES, 0, size);
     glBindVertexArray(0);
-
-    //return true;
-
 }
 
 
 void 
 Shape::initializeBuffers()
 {
+    
+    glUseProgram(currentInstance->getProgramId());  
+    
     glGenVertexArrays(1, &VAO_);
+    glGenBuffers(1, &VBO_);
+
+    // bind nos vertices.
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_);    
+    GLuint bufferVerticeSize = data.size() * sizeof(glm::vec3);
+
+    glBufferData(GL_ARRAY_BUFFER, bufferVerticeSize, &data[0], GL_STATIC_DRAW);    
     glBindVertexArray(VAO_);
 
-    GLuint buffers[4];
-    glGenBuffers(4, buffers);
-
-    // vertecies
-    cout << "Vertice size " << data.size() << endl;
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-    GLuint bufferVSize = data.size() * sizeof(glm::vec3);
-    glBufferData(GL_ARRAY_BUFFER, bufferVSize, &data[0], GL_STATIC_DRAW);
+    // positions attributes.
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
 
-    // colours
-    cout << "Color size " << colors.size() << endl;
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
-    GLuint bufferCSize = colors.size() * sizeof(glm::vec3);
-    glBufferData(GL_ARRAY_BUFFER, bufferCSize, &colors[0], GL_STATIC_DRAW);
+    // normals.
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
 
-    // normals
-    cout << "Normals size " << normals.size() << endl;
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[3]);
-    const int sizeNormals = normals.size() * sizeof(vec3);
-    glBufferData(GL_ARRAY_BUFFER, sizeNormals, &normals[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(2);
-
-
+    // Os vertices sao o mesmo p objeto lgiht;
+    // setar Vao, VBO eh o mesmo!!!! 
+    GLuint lightVAO;
+    glGenVertexArrays(1, &lightVAO);
+    glBindVertexArray(lightVAO);
+    // We only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need.
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_);
+    // Set the vertex attributes (only position data for the lamp))
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, data.size() * sizeof(GLfloat), (GLvoid*)0); // Note that we skip over the normal vectors
+    glEnableVertexAttribArray(0);
     glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glDeleteBuffers(4, buffers);
-
-
-    // Be sure to activate the shader
-    glUseProgram(currentInstance->getProgramId());
-  
-    // Update the uniform color
-    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "ourColor");
     
+    // nesse ponto?!
+    check_gl_error();
+
+    // Clear the colorbuffer
+    /*glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);*/
+
+    
+    // Trata transformacao da Camera;
+    glm::mat4 view;
+    view = glm::lookAt(currentInstance->cameraPos, currentInstance->cameraPos + currentInstance->cameraFront, currentInstance->cameraUp);
+    glm::mat4 projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
+    // Pega os uniformes.
+    
+    check_gl_error();
+
+
+    GLint modelLoc = glGetUniformLocation(currentInstance->getProgramId(), "model");
+    GLint viewLoc = glGetUniformLocation(currentInstance->getProgramId(), "view");
+    GLint projLoc = glGetUniformLocation(currentInstance->getProgramId(), "projection");
+    
+    // Passa as matrizes. pro shader.
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        
+
+    check_gl_error();
+
+
+    glBindVertexArray(VAO_);
+    glm::mat4 model;
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glDrawArrays(GL_TRIANGLES, 0, this->data.size() * sizeof(glm::vec3));
+    glBindVertexArray(0);
+
+
+
+    // Cores.
+    // Atualiza uniform de cores.
+    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "ourColor");
     // atribui cor verde.
     glUniform4f(vertexColorLocation, this->colorR, this->colorG, this->colorB, 1.0f);
+
+
+    check_gl_error();
+    /*glm::mat4 trans;
+    trans = glm::translate(trans, glm::vec3(this->transX, this->transY, this->transZ));    
+    trans = glm::rotate(trans, this->anguloRotacao, this->DirecaoRotate);
+
+    GLuint transformLoc = glGetUniformLocation(currentInstance->getProgramId(), "transform");
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));*/
+
+
 
 }
 
