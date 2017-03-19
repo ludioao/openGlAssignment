@@ -48,6 +48,9 @@ class Shape {
         float   transX,
                 transY,
                 transZ;
+
+        // 
+        glm::vec3 scaleCoordinates;
         
         // rotacao
         glm::vec3 DirecaoRotate;
@@ -96,7 +99,9 @@ class Shape {
         void setScalable(float x, float y, float z)
         {
             this->scalable = true;
-            this->modelShape = glm::scale(this->modelShape, glm::vec3(x, y, z));
+
+            this->scaleCoordinates = glm::vec3(x, y, z);
+            //this->modelShape = glm::scale(this->modelShape, glm::vec3(x, y, z));
         };
         void setTranslateable(float x, float y, float z)
         {

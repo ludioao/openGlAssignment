@@ -709,11 +709,14 @@ Shape::Shape(int shapeId, string t, string shapeName)
     this->translateable = false;
 
     // sem transladar.
-    this->transX = this->transY = this->transZ = 0.0;
+    this->transX = 0.5;
+    this->transY = -0.5;
+    this->transZ = 0.0;
 
     // rotacao inicial
-    this->anguloRotacao = 0.0;
-    this->DirecaoRotate = glm::vec3(0.0, 0.0, 0.0);
+    this->anguloRotacao = 50.0;
+    this->DirecaoRotate = glm::vec3(0.0, 0.0, 1.0);
+    this->scaleCoordinates = glm::vec3(1.0, 1.0, 1.0);
 
     //this->drawShape();
 }
@@ -754,26 +757,30 @@ Shape::drawShape()
     this->initializeBuffers();
 
     // Pega o valor VAO setado na funcao anterior.
-    //glBindVertexArray(VAO_);
+    glBindVertexArray(VAO_);
     
     // GLUint lightVAO;
     // glGenVertexArrays(1, &lightVAO);
     // glBindVertexArray(lightVAO);
     // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    // Por fim, desenha 
-    //GLuint size = this->data.size() * sizeof(glm::vec3);
-    //glDrawArrays(GL_TRIANGLES, 0, size);
+    GLint modelLoc = glGetUniformLocation(currentInstance->getProgramId(), "model");
+    glBindVertexArray(VAO_);
+    glm::mat4 model;
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glDrawArrays(GL_TRIANGLES, 0, this->data.size() * sizeof(glm::vec3));
     glBindVertexArray(0);
+    
+    
 }
 
 
 void 
 Shape::initializeBuffers()
 {
-    
-    glUseProgram(currentInstance->getProgramId());  
-    
+        
+    int programId = currentInstance->getProgramId();        
+    cout << "ProgramID > " << programId << endl;
+    glUseProgram(programId);  // 
     glGenVertexArrays(1, &VAO_);
     glGenBuffers(1, &VBO_);
 
@@ -783,45 +790,44 @@ Shape::initializeBuffers()
 
     glBufferData(GL_ARRAY_BUFFER, bufferVerticeSize, &data[0], GL_STATIC_DRAW);    
     glBindVertexArray(VAO_);
-
+    
     // positions attributes.
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
-
+    
     // normals.
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
-
+    
     // Os vertices sao o mesmo p objeto lgiht;
     // setar Vao, VBO eh o mesmo!!!! 
-    GLuint lightVAO;
+    GLuint lightVAO;    
     glGenVertexArrays(1, &lightVAO);
     glBindVertexArray(lightVAO);
+    
     // We only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need.
     glBindBuffer(GL_ARRAY_BUFFER, VBO_);
+    
     // Set the vertex attributes (only position data for the lamp))
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, data.size() * sizeof(GLfloat), (GLvoid*)0); // Note that we skip over the normal vectors
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
     
     // nesse ponto?!
-    check_gl_error();
-
     // Clear the colorbuffer
     /*glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);*/
 
-    
     // Trata transformacao da Camera;
     glm::mat4 view;
     view = glm::lookAt(currentInstance->cameraPos, currentInstance->cameraPos + currentInstance->cameraFront, currentInstance->cameraUp);
     glm::mat4 projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
     // Pega os uniformes.
     
-    check_gl_error();
+    // check_gl_error();
 
 
-    GLint modelLoc = glGetUniformLocation(currentInstance->getProgramId(), "model");
+   
     GLint viewLoc = glGetUniformLocation(currentInstance->getProgramId(), "view");
     GLint projLoc = glGetUniformLocation(currentInstance->getProgramId(), "projection");
     
@@ -830,16 +836,9 @@ Shape::initializeBuffers()
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
         
 
-    check_gl_error();
+    // check_gl_error();
 
-
-    glBindVertexArray(VAO_);
-    glm::mat4 model;
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    glDrawArrays(GL_TRIANGLES, 0, this->data.size() * sizeof(glm::vec3));
-    glBindVertexArray(0);
-
-
+    
 
     // Cores.
     // Atualiza uniform de cores.
@@ -847,20 +846,16 @@ Shape::initializeBuffers()
     // atribui cor verde.
     glUniform4f(vertexColorLocation, this->colorR, this->colorG, this->colorB, 1.0f);
 
+    // Create transformations
+    glm::mat4 transform;
+    transform = glm::scale(transform, this->scaleCoordinates);
+    transform = glm::translate(transform, glm::vec3(this->transX, this->transY, this->transZ));
+    transform = glm::rotate(transform, this->anguloRotacao, this->DirecaoRotate);
 
-    check_gl_error();
-    /*glm::mat4 trans;
-    trans = glm::translate(trans, glm::vec3(this->transX, this->transY, this->transZ));    
-    trans = glm::rotate(trans, this->anguloRotacao, this->DirecaoRotate);
-
-    GLuint transformLoc = glGetUniformLocation(currentInstance->getProgramId(), "transform");
-    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));*/
-
-
-
+    // Get matrix's uniform location and set matrix
+    GLint transformLoc = glGetUniformLocation(currentInstance->getProgramId(), "transform");
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));        
 }
-
-
 
 
 
