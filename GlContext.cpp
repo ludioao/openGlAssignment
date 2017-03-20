@@ -112,6 +112,8 @@ OpenGLContext::OpenGLContext(int argc, char *argv[]) {
     this->cameraUp = glm::cross(this->cameraDirection, this->cameraRight);
 
 
+    this->projectionType = "perspective";
+
 
 	if (error != GLEW_OK) {
 		throw std::runtime_error("Error initializing GLEW.");
@@ -394,7 +396,15 @@ void OpenGLContext::drawAxis(vector<glm::vec3> custom_vertices, float colorR, fl
     // Trata transformacao da Camera;
     glm::mat4 view;
     view = glm::lookAt(currentInstance->cameraPos, currentInstance->cameraTarget, currentInstance->cameraUp);
-    glm::mat4 projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
+    glm::mat4 projection;
+
+    if (currentInstance->projectionType.compare("perspective") == 0) {
+        projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
+    } else {
+        // projecao ortonormal
+        projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); 
+    }
+
     // Pega os uniformes.
 
     GLint viewLoc = glGetUniformLocation(currentInstance->getProgramId(), "view");
@@ -403,6 +413,8 @@ void OpenGLContext::drawAxis(vector<glm::vec3> custom_vertices, float colorR, fl
     // Passa as matrizes. pro shader.
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    
 
     // Create transformations
     glm::mat4 transform;
@@ -736,7 +748,11 @@ Drawer::setShading(string)
 void 
 Drawer::setProjection(string type)
 {
-
+    if (type.compare("perspective") == 0) {
+        currentInstance->projectionType = "perspective";
+    } else if (type.compare("ortho") == 0) {
+        currentInstance->projectionType = "ortho";
+    }
 };
         
 
@@ -778,9 +794,9 @@ Drawer::setRotate(string shapeName, float angle, float x, float y, float z)
 };
         
 void
-Drawer::setLookAt(float, float, float)
+Drawer::setLookAt(float x, float y, float z)
 {
-
+   currentInstance->cameraTarget  = glm::vec3(x, y, z); // onde a camera ta olhando.
 };
         
 void 
@@ -949,9 +965,17 @@ Shape::initializeBuffers()
     glBindVertexArray(0);
     
     // Trata transformacao da Camera;
+    // Tutorial daqui: http://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/
     glm::mat4 view;
     view = glm::lookAt(currentInstance->cameraPos, currentInstance->cameraTarget, currentInstance->cameraUp);
-    glm::mat4 projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
+    glm::mat4 projection; 
+    if (currentInstance->projectionType.compare("perspective") == 0) {
+        projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
+    } else {
+        // projecao ortonormal
+        projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
+    }
+    
     // Pega os uniformes.
     
     GLint viewLoc = glGetUniformLocation(currentInstance->getProgramId(), "view");

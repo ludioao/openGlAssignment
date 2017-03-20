@@ -66,6 +66,8 @@ class OpenGLContext
         glm::vec3 cameraRight;
         glm::vec3 cameraUp;
 
+        string projectionType;
+
         float cameraZoom;
 
         OpenGLContext(int argc, char *argv[]);     // Constructor
