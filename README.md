@@ -15,7 +15,7 @@ https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Introduction
 - [ ] reflection_on type float
 - [ ] reflection_off type
 - [ ] shading type
-- [ ] projection type
+- [x] projection type
 - [x] translate name1 float float float
 - [x] scale name1 float float float
 - [x] rotate name1 float float float
@@ -24,4 +24,4 @@ https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Introduction
 - [x] color name1 float float float
 - [x] axis
 - [ ] save filename
-- [ ] quit
+- [x] quit
