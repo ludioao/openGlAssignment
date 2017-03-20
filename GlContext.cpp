@@ -622,10 +622,11 @@ Drawer::listen()
         }
         else if (command.compare("quit") == 0)
         {
-            this->exit();
+            this->exitListen();
             cout << "Program finished." << endl;
             //currentInstance->finalize();
-            //delete currentInstance;            
+            //delete currentInstance;       
+            exit(1);     
             break;
         }
         else {
@@ -832,7 +833,7 @@ Drawer::save(string filename)
 };
         
 void 
-Drawer::exit()
+Drawer::exitListen()
 {
     cout << "Finalizando openGL ! u.u" << endl;
 };

@@ -37,6 +37,6 @@ class Drawer
         void setColor(std::string, float, float, float);
         void axis();
         void save(std::string filename);
-        void exit();
+        void exitListen();
 
 };
