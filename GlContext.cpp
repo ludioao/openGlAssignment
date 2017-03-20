@@ -399,10 +399,10 @@ void OpenGLContext::drawAxis(vector<glm::vec3> custom_vertices, float colorR, fl
     glm::mat4 projection;
 
     if (currentInstance->projectionType.compare("perspective") == 0) {
-        projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
+        projection = glm::perspective(-1.0f, 1.0f, -1.0f, 1.0f, 0.5f, 2.0f);
     } else {
         // projecao ortonormal
-        projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); 
+        projection = glm::ortho(-1.0f,1.0f,-1.0f,1.0f,0.5f,2.0f); 
     }
 
     // Pega os uniformes.
@@ -426,7 +426,7 @@ void OpenGLContext::drawAxis(vector<glm::vec3> custom_vertices, float colorR, fl
     GLint transformLoc = glGetUniformLocation(currentInstance->getProgramId(), "transform");
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));        
 
-    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "ourColor");
+    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "objectColor");
     glUniform4f(vertexColorLocation, colorR, colorG, colorB, 1.0f);
 
     // Pega o valor VAO setado na funcao anterior.
@@ -696,15 +696,14 @@ Drawer::removeShape(string shapeName)
 void 
 Drawer::addLight(string shapeName, float f1, float f2, float f3)
 {
-    // // find by shapename
-    // int shapeId = this->findShape(shapeName);
-    
-    // // Find..
-    // if (shapeId != -1)
-    // {
-    //     // Update light
-    //     this->updateLight(shapeId, true, f1, f2, f3);
-    // }
+    for (auto _drawable : currentInstance->objects)
+    {
+        if (_drawable->getName().compare(shapeName) == 0)
+        {
+            _drawable->setLight(f1, f2, f3);
+        }        
+    }
+
 };
 
 
@@ -871,6 +870,7 @@ Shape::Shape(int shapeId, string t, string shapeName)
     this->DirecaoRotate = glm::vec3(0.0, 0.0, 1.0);
     this->scaleCoordinates = glm::vec3(1.0, 1.0, 1.0);
 
+    this->lightVec = glm::vec3(0.0, 0.0, 0.0);
     //this->drawShape();
 }
 
@@ -971,10 +971,10 @@ Shape::initializeBuffers()
     view = glm::lookAt(currentInstance->cameraPos, currentInstance->cameraTarget, currentInstance->cameraUp);
     glm::mat4 projection; 
     if (currentInstance->projectionType.compare("perspective") == 0) {
-        projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
+        projection = glm::perspective(-1.0f, 1.0f, -1.0f, 1.0f, 0.5f, 2.0f);
     } else {
         // projecao ortonormal
-        projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
+        projection = glm::ortho(-1.0f,1.0f,-1.0f,1.0f,0.5f,2.0f);
     }
     
     // Pega os uniformes.
@@ -988,7 +988,7 @@ Shape::initializeBuffers()
         
     // Cores.
     // Atualiza uniform de cores.
-    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "ourColor");
+    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "objectColor");
     // atribui cor verde.
     glUniform4f(vertexColorLocation, this->colorR, this->colorG, this->colorB, 1.0f);
 
