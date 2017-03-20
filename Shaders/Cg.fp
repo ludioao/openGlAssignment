@@ -114,7 +114,7 @@ void main(){
   // pontos de luz.
   for (int i = 0; i < NR_POINT_LIGHTS; i++)
   {
-    result += calculaPontoLuz(luzPoints[i], norm, FragPos, viewDir);
+    result += calculaPontoLuz(luzPoints[i], norm, FragPos, ViewDirection);
   }
 
   color = vec4(result, 1.0f);
