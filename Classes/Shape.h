@@ -55,6 +55,8 @@ class Shape {
         // rotacao
         glm::vec3 DirecaoRotate;
         float anguloRotacao;
+
+        glm::vec3 lightVec;
     
     public:
         // VARIAVEIS COMPARTILHADAS P/ SEREM UTILIZADSA PELO PARSER
@@ -110,6 +112,11 @@ class Shape {
             this->transY = y;
             this->transZ = z;
             //this->modelShape = glm::translate(this->modelShape, glm::vec3(x, y, z));
+        };
+
+        void setLight(float f1, float f2, float f3)
+        {
+            this->lightVec = glm::vec3(f1, f2, f3);
         };
 
         glm::mat4& getModel()
