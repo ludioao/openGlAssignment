@@ -23,43 +23,18 @@
 #include <glm/exponential.hpp>// glm::pow
 #include <glm/gtc/random.hpp>// glm::vecRand3
 
-
 #include "./Classes/Shape.h"
-
+#include "./Classes/Light.h"
 using namespace std;
-
-/*#define ESZ(elem) (int)elem.size()
-
-
-//http://code.runnable.com/VHb0hWMZp-ws1gAr/splitting-a-string-into-a-vector-for-c%2B%2B
-// You could also take an existing vector as a parameter.
-vector<string> split(string s, string t)
-{
-	vector<string> res;
-	while(1)
-	{
-		int pos = s.find(t);
-		if(pos == -1){res.push_back(s); break;}
-		res.push_back(s.substr(0, pos));
-		s = s.substr(pos+1, ESZ(s)-pos-1);
-	}
-	return res;
-
-}*/
 
 class OpenGLContext
 {
     public:
         vector<Shape*> objects;
-        bool lightning;
-
-        
-
+        vector<Light*> lights;
         string shading;
-
         bool enableAxis;
 
-        
         // seguindo o tutorial bolado:
         // https://learnopengl.com/#!Getting-started/Camera
 
@@ -75,6 +50,13 @@ class OpenGLContext
 
         // luz
         glm::vec3 lightPosition;    
+        float intensidadeLuzAmbiente;
+        float intensidadeLuzEspecular;
+
+        // Tipos de Luz.
+        bool enableSpecularLight;
+        bool enableDiffuseLight;
+        bool enableAmbientLight;
 
         OpenGLContext(int argc, char *argv[]);     // Constructor
         ~OpenGLContext();    // Destructor

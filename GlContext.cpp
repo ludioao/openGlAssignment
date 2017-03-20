@@ -34,6 +34,7 @@ namespace {
 
 #include "./Classes/Camera.h"
 #include "./Classes/Drawer.h"
+#include "./Classes/Light.h"
 #include "./Classes/Shape.h"
 #include "./Classes/LeitorObj.h"
 
@@ -103,8 +104,8 @@ OpenGLContext::OpenGLContext(int argc, char *argv[]) {
     // this->cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
     // this->cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     // this->cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
-    this->cameraPos     = glm::vec3(0.0f, 0.0f, 3.0f); // posicao da camera.
-    this->cameraTarget  = glm::vec3(0.0f, 0.0f, 0.0f); // onde a camera ta olhando.
+    this->cameraPos     = glm::vec3(0.0f, 0.0f, 0.0f); // posicao da camera.
+    this->cameraTarget  = glm::vec3(0.0f, 0.0f, -1.0f); // onde a camera ta olhando.
     this->cameraDirection = glm::normalize(this->cameraPos - this->cameraTarget);  
 
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -112,10 +113,19 @@ OpenGLContext::OpenGLContext(int argc, char *argv[]) {
     this->cameraUp = glm::cross(this->cameraDirection, this->cameraRight);
 
 
-    this->projectionType = "perspective";
+    // Projecao Ortho
+    this->projectionType = "ortho";
 
-    // this->lightPosition = glm::vec3(1.0f, 1.0f, 0.25f);
+    
+    // Luzes
+    // this->lightPosition = glm::vec3(1.0f, 1.0f, 0.25f);   
+    this->enableSpecularLight = false;
+    this->enableDiffuseLight = false;
+    this->enableAmbientLight = true;
     this->lightPosition = glm::vec3(1.2f, 1.0f, 2.0f);
+
+    this->intensidadeLuzAmbiente = 0.1;
+    this->intensidadeLuzEspecular = 32.0;
 
 
 	if (error != GLEW_OK) {
@@ -419,6 +429,20 @@ void OpenGLContext::drawAxis(vector<glm::vec3> custom_vertices, float colorR, fl
 
     
 
+    // Uniformes da luz.
+    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "objectColor");
+    GLint lightColorLocation  = glGetUniformLocation(currentInstance->getProgramId(), "lightColor");
+    GLint lightPosLocation  = glGetUniformLocation(currentInstance->getProgramId(), "lightPos");
+    GLint viewPosLocation  = glGetUniformLocation(currentInstance->getProgramId(), "viewPos");
+    GLint customParametersLocation  = glGetUniformLocation(currentInstance->getProgramId(), "parametros");
+
+    // passa os dados das uniformes.
+    glUniform3f(vertexColorLocation, colorR, colorG, colorB);
+    glUniform3f(lightColorLocation, 1.0f, 1.0f, 1.0f); // luz de cor branca.
+    //glUniform3f(lightPosLocation, this->lightVec[0], this->lightVec[1], this->lightVec[2]); // posicao da luz.
+    glUniform3f(viewPosLocation, currentInstance->cameraPos[0], currentInstance->cameraPos[1], currentInstance->cameraPos[2]); // viewpos == cameraposition
+    glUniform3f(customParametersLocation, currentInstance->intensidadeLuzAmbiente, currentInstance->intensidadeLuzEspecular, 0.0f);
+
     // Create transformations
     glm::mat4 transform;
     transform = glm::scale(transform, glm::vec3(1.0f, 1.0f, 1.0f));
@@ -429,8 +453,7 @@ void OpenGLContext::drawAxis(vector<glm::vec3> custom_vertices, float colorR, fl
     GLint transformLoc = glGetUniformLocation(currentInstance->getProgramId(), "transform");
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));        
 
-    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "objectColor");
-    glUniform4f(vertexColorLocation, colorR, colorG, colorB, 1.0f);
+    
 
     // Pega o valor VAO setado na funcao anterior.
     glBindVertexArray(tempVaoID);
@@ -441,34 +464,6 @@ void OpenGLContext::drawAxis(vector<glm::vec3> custom_vertices, float colorR, fl
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glDrawArrays(GL_LINES, 0, 2);
     glBindVertexArray(0);    
-
-    // Blue.
-    //glUniform4f(vertexColorLocation, 0.0f, 0.0f, 1.0f, 1.0f);
-    
-    // Green
-    // glUniform4f(vertexColorLocation, 0.0f, 1.0f, 0.0f, 1.0f);
-
-    // Red
-    // glUniform4f(vertexColorLocation, 1.0f, 0.0f, 0.0f, 1.0f);
-
-    
-
-    /*static const GLfloat g_vertex_buffer_data[] = {
-            0, 0, 0,
-            0, 0, 0.5f,
-    };
-
-
-        static const GLfloat vertex_buffer_data[] = {
-             0, 0, 0,
-             0,  0.5f, 0,
-        };
-
-          static const GLfloat vertex_buffer_data3[] = {
-             0, 0, 0,
-             0.5f, 0, 0,
-        };*/
-
 }
 
 
@@ -695,32 +690,33 @@ Drawer::removeShape(string shapeName)
 };
 
 
-// Adiciona luz no shape
+// Adiciona luz na cena
 void 
-Drawer::addLight(string shapeName, float f1, float f2, float f3)
+Drawer::addLight(string lightName, float f1, float f2, float f3)
 {
-    for (auto _drawable : currentInstance->objects)
-    {
-        if (_drawable->getName().compare(shapeName) == 0)
-        {
-            _drawable->setLight(f1, f2, f3);
-        }        
+    int countLight = currentInstance->lights.size();
+    
+    // check if has more than 10
+    if (countLight >= 10) {
+        cout << "Max number of lights reached." << endl;
+    } else {
+        Light *customLight;
+        customLight = new Light(lightName, glm::vec3(f1, f2, f3));
+        currentInstance->lights.push_back(customLight);
     }
-
 };
 
 
 // vei acho q nem precisa comentar, esses metodos tao mt intuitivo...
-// Remove a luz do shape ()
+// Remove a luz do vetor.
 void 
-Drawer::removeLight(string shapeName)
+Drawer::removeLight(string name)
 {
-    // int shapeId = this->findShape(shapeName);
-    
-    // if (shapeId != -1)
-    // {
-    //     this->destroyLight(shapeId);
-    // }    
+    for (int i = 0; i < currentInstance->lights.size(); i++)
+    {
+        if (currentInstance->lights[i]->lightName.compare(name) == 0)
+            currentInstance->lights.erase(currentInstance->lights.begin() + i);
+    }
 };
 
 void 
@@ -928,6 +924,107 @@ Shape::drawShape()
     
 }
 
+void 
+Shape::lightDirBuffer()
+{
+    int programId = currentInstance->getProgramId();
+    glUseProgram(programId);
+    
+    // Luz Direcional.
+    glUniform3f(
+        glGetUniformLocation(programId, "LuzDirecional.Direcao"), 0.0f, 0.0f, 0.0f
+    );
+    glUniform3f(
+        glGetUniformLocation(programId, "LuzDirecional.Ambiente"), 0.05f, 0.05f, 0.05f
+    );
+    glUniform3f(
+        glGetUniformLocation(programId, "LuzDirecional.Difuso"), 0.4f, 0.4f, 0.4f
+    );
+    glUniform3f(
+        glGetUniformLocation(programId, "LuzDirecional.Especular"), 0.5f, 0.5f, 0.5f
+    );
+}
+
+void 
+Shape::pointLightBuffer()
+{
+    int programId = currentInstance->getProgramId();
+    glUseProgram(programId);
+    string  nameStruct,
+            namePosicao,
+            nameAmbient, 
+            nameEspecular,
+            nameDifuso,
+            nameConstante,
+            nameLinear,
+            nameQuadratico;
+
+    for (int i = 0; i < currentInstance->lights.size(); ++i)
+    {
+        nameStruct = "luzPoints[" + std::to_string(i) + "]";
+        namePosicao = nameStruct + ".Posicao";
+        nameAmbient = nameStruct + ".Ambiente";
+        nameEspecular = nameStruct + ".Especular";
+        nameDifuso = nameStruct + ".Difuso";
+        nameConstante = nameStruct + ".Difuso";
+        nameLinear = nameStruct + ".Linear";
+        nameQuadratico = nameStruct + ".Quadratico";
+        
+        glUniform3f(
+            glGetUniformLocation(
+                programId,
+                namePosicao.c_str()
+            ), 
+            currentInstance->lights[i]->lightVec[0], 
+            currentInstance->lights[i]->lightVec[1], 
+            currentInstance->lights[i]->lightVec[2]
+        );
+
+
+        glUniform3f(
+            glGetUniformLocation(
+                programId,
+                nameAmbient.c_str()
+            ), 0.05f, 0.05f, 0.05f
+        );
+
+        glUniform3f(
+            glGetUniformLocation(
+                programId,
+                nameDifuso.c_str()
+            ), 0.8f, 0.8f, 0.8f
+        );
+
+        glUniform3f(
+            glGetUniformLocation(
+                programId,
+                nameEspecular.c_str()
+            ), 1.0f, 1.0f, 1.0f
+        );
+
+        glUniform1f(
+            glGetUniformLocation(
+                programId,
+                nameConstante.c_str()
+            ), 1.0
+        );
+
+        glUniform1f(
+            glGetUniformLocation(
+                programId,
+                nameLinear.c_str()
+            ), 1.0
+        );
+
+        glUniform1f(
+            glGetUniformLocation(
+                programId,
+                nameQuadratico.c_str()
+            ), 0.25
+        );
+
+    }
+}
 
 void 
 Shape::initializeBuffers()
@@ -953,6 +1050,7 @@ Shape::initializeBuffers()
     // normals.
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
+
     
     // Os vertices sao o mesmo p objeto lgiht;
     // setar Vao, VBO eh o mesmo!!!! 
@@ -978,21 +1076,47 @@ Shape::initializeBuffers()
     } else {
         // projecao ortonormal
         projection = glm::ortho(-1.0f,1.0f,-1.0f,1.0f,0.5f,2.0f);
-    }
-    
+    }    
 
+    // Aplicar loop dos lights.. :P
     // Uniformes da luz.
     GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "objectColor");
     GLint lightColorLocation  = glGetUniformLocation(currentInstance->getProgramId(), "lightColor");
     GLint lightPosLocation  = glGetUniformLocation(currentInstance->getProgramId(), "lightPos");
     GLint viewPosLocation  = glGetUniformLocation(currentInstance->getProgramId(), "viewPos");
+    GLint customParametersLocation  = glGetUniformLocation(currentInstance->getProgramId(), "parametros");
+    
+    // Parameters (Luzes)
+    GLint especularLocation = glGetUniformLocation(
+        currentInstance->getProgramId(),
+        "AtivaEspecular"
+    );
+    glUniform1i(especularLocation, currentInstance->enableSpecularLight ? 1 : 0);
+    GLint diffuseLocation = glGetUniformLocation(
+        currentInstance->getProgramId(),
+        "AtivaDifuso"
+    );
+    glUniform1i(diffuseLocation, currentInstance->enableDiffuseLight ? 1 : 0);
+    GLint ambientLocation = glGetUniformLocation(
+        currentInstance->getProgramId(),
+        "AtivaAmbiente"
+    );
+    glUniform1i(ambientLocation, currentInstance->enableAmbientLight ? 1 : 0);
+
+    // Custom Parameters
+    glUniform3f(viewPosLocation, currentInstance->cameraPos[0], currentInstance->cameraPos[1], currentInstance->cameraPos[2]); // viewpos == cameraposition
+    glUniform3f(customParametersLocation, currentInstance->intensidadeLuzAmbiente, currentInstance->intensidadeLuzEspecular, 0.0f);
+
+
+    this->lightDirBuffer();
+    this->pointLightBuffer();
 
     // passa os dados das uniformes.
     glUniform3f(vertexColorLocation, this->colorR, this->colorG, this->colorB); // cor do objeto.
     glUniform3f(lightColorLocation, 1.0f, 1.0f, 1.0f); // luz de cor branca.
     glUniform3f(lightPosLocation, this->lightVec[0], this->lightVec[1], this->lightVec[2]); // posicao da luz.
-    glUniform3f(viewPosLocation, currentInstance->cameraPos[0], currentInstance->cameraPos[1], currentInstance->cameraPos[2]); // viewpos == cameraposition
-
+    
+    
     
     // Pega os uniformes.
     GLint viewLoc = glGetUniformLocation(currentInstance->getProgramId(), "view");
@@ -1015,7 +1139,10 @@ Shape::initializeBuffers()
 }
 
 
-
+Light::Light(string name, glm::vec3 values) {
+    this->lightName = name;
+    this->lightVec = values;
+}
 
 
 
