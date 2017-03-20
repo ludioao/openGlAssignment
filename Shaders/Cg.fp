@@ -77,7 +77,7 @@ vec3 calculaPontoLuz(PontoLuz light, vec3 normal, vec3 fragPos, vec3 viewDir)
     float diff = max(dot(normal, lightDir), 0.0);    
     // Especualr 
     vec3 reflectDir = reflect(-lightDir, normal);
-    int parametroReflexaoEspecular = 32;
+    
     float spec = pow(max(dot(direcaoVisualizacao, reflectDir), 0.0), parametroReflexaoEspecular);    
     // Atenuacao
     float distance    = length(light.Posicao - fragPos);
