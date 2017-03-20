@@ -58,7 +58,7 @@ vec3 calculaDirecaoLuz(LuzDirecional luz, vec3 Normal, vec3 direcaoVisualizacao)
   vec3 Especular = luz.Especular * spec;
 
   vec3 Resultado;  
-  if (AtivaAmbiente)  Resultado += Ambiente;
+  if (AtivaAmbiente)  Resultado += Ambient;
   if (AtivaDifuso)    Resultado += Diffuse;    
   if (AtivaEspecular) Resultado += Especular;
 
@@ -78,7 +78,7 @@ vec3 calculaPontoLuz(PontoLuz light, vec3 normal, vec3 fragPos, vec3 viewDir)
     // Especualr 
     vec3 reflectDir = reflect(-lightDir, normal);
     
-    float spec = pow(max(dot(direcaoVisualizacao, reflectDir), 0.0), parametroReflexaoEspecular);    
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), parametroReflexaoEspecular);    
     // Atenuacao
     float distance    = length(light.Posicao - fragPos);
     float attenuation = 1.0f / (light.Constante + light.Linear * distance + 
