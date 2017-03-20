@@ -54,12 +54,12 @@ vec3 calculaDirecaoLuz(LuzDirecional luz, vec3 Normal, vec3 direcaoVisualizacao)
   float spec = pow(max(dot(direcaoVisualizacao, reflectDir), 0.0), parametroReflexaoEspecular);
 
   vec3 Ambient = luz.Ambiente * IntensidadeLuz;
-  vec3 Diffuse = luz.Difuso * Diff;
+  vec3 Diffuse = luz.Difuso * diff;
   vec3 Especular = luz.Especular * spec;
 
   vec3 Resultado;  
   if (AtivaAmbiente)  Resultado += Ambiente;
-  if (AtivaDifuso)    Resultado += Difuso;    
+  if (AtivaDifuso)    Resultado += Diffuse;    
   if (AtivaEspecular) Resultado += Especular;
 
   return Resultado;
