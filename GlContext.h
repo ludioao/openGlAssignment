@@ -52,6 +52,9 @@ class OpenGLContext
     public:
         vector<Shape*> objects;
         bool lightning;
+
+        
+
         string shading;
 
         bool enableAxis;
@@ -69,6 +72,9 @@ class OpenGLContext
         string projectionType;
 
         float cameraZoom;
+
+        // luz
+        glm::vec3 lightPosition;    
 
         OpenGLContext(int argc, char *argv[]);     // Constructor
         ~OpenGLContext();    // Destructor

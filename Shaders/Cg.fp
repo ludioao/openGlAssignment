@@ -1,6 +1,5 @@
-#version 130
+#version 330 core
 out vec4 color;
-uniform vec4 ourColor;
 
 in vec3 FragPos;
 in vec3 Normal;
@@ -16,23 +15,23 @@ void main(){
   //color = ourColor;
 
   // Ambiente
-  float AmbientStr = 0.1f;
-  vec3 Ambiente = AmbientStr * lightColor;
+  float IntensidadeLuz = 0.1f;
+  vec3 Ambiente = IntensidadeLuz * lightColor;
 
   // LightDir.
   vec3 norm = normalize(Normal);
-  vec3 LightDir = normalize(lightPos- FragPos);
-  float diff = max(dot(norm, LightDir), 0.0);
-  vec3 Diffuse = diff * lightColor;
+  vec3 DirecaoLuz = normalize(lightPos- FragPos);
+  float diff = max(dot(norm, DirecaoLuz), 0.0);
+  vec3 Difuso = diff * lightColor;
 
 
   // Especular.
-  float SpecularStr = 0.5f;
+  float IntensidadeEspecular = 0.5f;
   vec3 ViewDirection = normalize(viewPos - FragPos);
-  vec3 RefDirection = reflect(-LightDir, norm);
+  vec3 RefDirection = reflect(-DirecaoLuz, norm);
   float Spec = pow(max(dot(ViewDirection, RefDirection), 0.0), 32);
-  vec3 Specular = SpecularStr * Spec * lightColor;
+  vec3 Especular = IntensidadeEspecular * Spec * lightColor;
 
-  vec3 result = (Ambiente + Diffuse + Specular) * ourColor;
+  vec3 result = (Ambiente + Difuso + Especular) * objectColor;
   color = vec4(result, 1.0f);
 }

@@ -114,6 +114,9 @@ OpenGLContext::OpenGLContext(int argc, char *argv[]) {
 
     this->projectionType = "perspective";
 
+    // this->lightPosition = glm::vec3(1.0f, 1.0f, 0.25f);
+    this->lightPosition = glm::vec3(1.2f, 1.0f, 2.0f);
+
 
 	if (error != GLEW_OK) {
 		throw std::runtime_error("Error initializing GLEW.");
@@ -399,7 +402,7 @@ void OpenGLContext::drawAxis(vector<glm::vec3> custom_vertices, float colorR, fl
     glm::mat4 projection;
 
     if (currentInstance->projectionType.compare("perspective") == 0) {
-        projection = glm::perspective(-1.0f, 1.0f, -1.0f, 1.0f, 0.5f, 2.0f);
+        projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
     } else {
         // projecao ortonormal
         projection = glm::ortho(-1.0f,1.0f,-1.0f,1.0f,0.5f,2.0f); 
@@ -870,7 +873,7 @@ Shape::Shape(int shapeId, string t, string shapeName)
     this->DirecaoRotate = glm::vec3(0.0, 0.0, 1.0);
     this->scaleCoordinates = glm::vec3(1.0, 1.0, 1.0);
 
-    this->lightVec = glm::vec3(0.0, 0.0, 0.0);
+    this->lightVec = glm::vec3(1.1f, 1.0f, 1.8f);
     //this->drawShape();
 }
 
@@ -957,11 +960,11 @@ Shape::initializeBuffers()
     glGenVertexArrays(1, &lightVAO);
     glBindVertexArray(lightVAO);
     
-    // We only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need.
+    // nesse passoa aki só faz o bind p/ VBO p linkar com o glvertexattrpointer...
+    // n precisa preencher, pq o vbo ja tem td q eu precisarei
     glBindBuffer(GL_ARRAY_BUFFER, VBO_);
     
-    // Set the vertex attributes (only position data for the lamp))
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, data.size() * sizeof(GLfloat), (GLvoid*)0); // Note that we skip over the normal vectors
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, data.size() * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
     
@@ -971,26 +974,34 @@ Shape::initializeBuffers()
     view = glm::lookAt(currentInstance->cameraPos, currentInstance->cameraTarget, currentInstance->cameraUp);
     glm::mat4 projection; 
     if (currentInstance->projectionType.compare("perspective") == 0) {
-        projection = glm::perspective(-1.0f, 1.0f, -1.0f, 1.0f, 0.5f, 2.0f);
+        projection = glm::perspective(currentInstance->cameraZoom, (float)SCREENWIDTH/(float)SCREENHEIGHT, 0.1f, 100.0f);
     } else {
         // projecao ortonormal
         projection = glm::ortho(-1.0f,1.0f,-1.0f,1.0f,0.5f,2.0f);
     }
     
-    // Pega os uniformes.
+
+    // Uniformes da luz.
+    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "objectColor");
+    GLint lightColorLocation  = glGetUniformLocation(currentInstance->getProgramId(), "lightColor");
+    GLint lightPosLocation  = glGetUniformLocation(currentInstance->getProgramId(), "lightPos");
+    GLint viewPosLocation  = glGetUniformLocation(currentInstance->getProgramId(), "viewPos");
+
+    // passa os dados das uniformes.
+    glUniform3f(vertexColorLocation, this->colorR, this->colorG, this->colorB); // cor do objeto.
+    glUniform3f(lightColorLocation, 1.0f, 1.0f, 1.0f); // luz de cor branca.
+    glUniform3f(lightPosLocation, this->lightVec[0], this->lightVec[1], this->lightVec[2]); // posicao da luz.
+    glUniform3f(viewPosLocation, currentInstance->cameraPos[0], currentInstance->cameraPos[1], currentInstance->cameraPos[2]); // viewpos == cameraposition
+
     
+    // Pega os uniformes.
     GLint viewLoc = glGetUniformLocation(currentInstance->getProgramId(), "view");
     GLint projLoc = glGetUniformLocation(currentInstance->getProgramId(), "projection");
+    GLint transformLoc = glGetUniformLocation(currentInstance->getProgramId(), "transform");
     
-    // Passa as matrizes. pro shader.
+    // passa a matriz pro shader 
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-        
-    // Cores.
-    // Atualiza uniform de cores.
-    GLint vertexColorLocation = glGetUniformLocation(currentInstance->getProgramId(), "objectColor");
-    // atribui cor verde.
-    glUniform4f(vertexColorLocation, this->colorR, this->colorG, this->colorB, 1.0f);
 
     // Create transformations
     glm::mat4 transform;
@@ -999,7 +1010,7 @@ Shape::initializeBuffers()
     transform = glm::rotate(transform, this->anguloRotacao, this->DirecaoRotate);
 
     // Get matrix's uniform location and set matrix
-    GLint transformLoc = glGetUniformLocation(currentInstance->getProgramId(), "transform");
+    
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));        
 }
 
